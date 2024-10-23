@@ -15,8 +15,7 @@ engine.setProperty('voice', voices[1].id)  # Change the index if needed
 
 # Pre-defined Newscaster responses
 responses = {
-    "hallo": "Hoi, ik ben Jip, je virtuele assistent, je cloud-based AI. Als je naar een nieuwsbriefing wilt luisteren, zeg dan: Jip, speel het nieuws",
-    "nieuws": [
+     "nieuws": [
         "Rechters laten zich beïnvloeden door het opleidingsniveau en de achtergrond van verdachten. Dat blijkt uit onderzoek van N.O.S. op 3 en Investico. Zonder vervolgopleiding en met een migratieachtergrond krijgen verdachten bijna drie keer zo vaak een celstraf in vergelijking met verdachten zonder migratieachtergrond en met een h.b.o.-of w.o. opleiding... ", 
         "Studenten met een beperking maken steeds vaker gebruik van een speciale aanvullende studiebeurs. Er zijn er nu ruim 9.000, meldt belangenorganisatie Ieder(in). De twintigjarige Fleur is slechtziend en is daardoor bijvoorbeeld meer tijd kwijt aan het lezen van studieboeken en heeft geen tijd en energie om naast haar studie te werken. Ze is blij met de toeslag... Het geeft mij heel veel rust en nu kan ik ook echt de focus leggen op mijn school, zonder dat ik stress heb over geld of werk of zoiets. En ja, ik heb eigenlijk mijn leven terug, want nu kan ik weer gewoon na school iets leuks gaan doen... ", 
         "De V.V.D. wil dat er een kiesdrempel komt voor de Tweede Kamer om versplintering in het parlement tegen te gaan. Op dit moment zitten er 15 partijen in de Kamer. Door alle afsplitsingen was dat nog veel meer in de vorige Kamer. Een kiesdrempel kan daar wat aan doen, zegt VVD-Kamerlid. Telkens, een kiesdrempel zorgt ervoor dat je een minimaal aantal zetels moet halen om in het parlement te komen. Dus door een kiesdrempel krijg je effectief minder politieke partijen in de Tweede Kamer, zodat de politiek zich ook meer kan gaan bezighouden met de inhoud, in plaats van continu met elkaar. Als het aan de VVD ligt, kan een partij pas in de Kamer komen als die minimaal 3 zetels haalt...", 
@@ -46,6 +45,9 @@ def listen():
             print("Could not request results from Google Speech Recognition service.")
             return None
 
+# Introduction
+speak("Hoi, ik ben Jip, je virtuele assistent, je cloud-based AI. Als je naar een nieuwsbriefing wilt luisteren, zeg dan: Jip, speel het nieuws.")
+
 # Main Loop
 while True:
     command = listen()
@@ -54,11 +56,7 @@ while True:
         print(f"Command recognized: {command}")
 
         # Check for specific keywords and respond accordingly
-        if "hallo" in command:
-            print("Speaking predefined response. . .")
-            speak(responses["hallo"])
-
-        elif "nieuws" in command:
+        if "nieuws" in command:
             print("Speaking news response. . .")
             # Announce the source before the news items
             speak("Uit het N.O.S. Journaal:")
@@ -68,11 +66,9 @@ while True:
             print("Geselecteerde nieuwsitems:")
             for news_item in selected_news:
                 print(news_item)
-            # Announce which news items were selected
-            news_list = ", ".join(selected_news)
-            speak("news_list")
+            # Speak each selected news item
             for news_item in selected_news:
-                speak(news_item)  # Speak each selected news item
+                speak(news_item)
             speak("Dat is alles voor nu.")
             break  # exit loop after speaking the news
 
