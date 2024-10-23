@@ -1,6 +1,7 @@
 import speech_recognition as sr
 import pyttsx3
 import random
+import time
 
 # Initialize Recognizer and pyttsx3 Engine
 recognizer = sr.Recognizer()
@@ -48,16 +49,7 @@ def listen():
 # Initial interaction
 speak("Hallo! Ik ben Jip, hoe heet jij?")  # "Hello! I am Jip. What's your name?"
 
-# Loop until a valid name is heard
-name = None
-while not name:
-    name = listen()
-    if name:
-        print(f"User's name: {name}")
-        speak(f"Bedankt voor het delen van uw naam.")  # "Thank you for sharing your name."
-    else:
-        speak("Sorry, ik heb je niet goed verstaan. Probeer het alsjeblieft opnieuw.")  # "Sorry, I didn't catch that. Please try again."
-
+time.sleep(3)  # Wait for 3 seconds
 # Ask how many events they would like to hear
 speak("Ik ben blij dat je vandaag de tijd hebt genomen om hier te komen. Ik vind het erg leuk om nieuwe mensen te ontmoeten en actuele gebeurtenissen in hun omgeving en in de wereld te bespreken. Vandaag zal ik je een paar nieuwsberichten laten horen van N.O.S. Zou je willen horen over drie actuele gebeurtenissen, twee actuele gebeurtenissen, of één actuele gebeurtenis?")  # "Would you like to hear three, two, or one current event?"
 
@@ -85,16 +77,12 @@ selected_news = random.sample(news_content, num_events)
 print(selected_news)
 
 for i, news_item in enumerate(selected_news, 1):
-    speak(f"Hier is nieuws {i}: {news_item}")
+    speak(news_item)
 
 # After speaking the selected news content, ask for the user's feedback
 speak("Dat is alle informatie die ik vandaag heb. Wat vond je ervan?")  # "That's all the information I have for today. What did you think?"
 
-# Wait for user's response
-feedback = None
-while feedback is None:
-    feedback = listen()
-    if feedback:
-        speak("Oh, interessant. Ik wil vandaag niet meer van je tijd in beslag nemen, dus we ronden het af. Bedankt voor het gesprek en ik hoop je snel weer te zien. Tot ziens en een fijne rest van je dag!")  # "Oh, interesting. I don't want to take more of your time today, so let's wrap it up. Thanks for the conversation and I hope to see you soon. Goodbye and have a nice day!"
-    else:
-        speak("Sorry, ik heb je niet goed verstaan. Probeer het opnieuw.")  # "Sorry, I didn't catch that."
+time.sleep(3)  # Wait for 3 seconds
+
+speak("Oh, interessant. Ik wil vandaag niet meer van je tijd in beslag nemen, dus we ronden het af. Bedankt voor het gesprek en ik hoop je snel weer te zien. Tot ziens en een fijne rest van je dag!")  # "Oh, interesting. I don't want to take more of your time today, so let's wrap it up. Thanks for the conversation and I hope to see you soon. Goodbye and have a nice day!"
+
