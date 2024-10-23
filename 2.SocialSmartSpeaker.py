@@ -61,6 +61,24 @@ while not name:
 # Ask how many events they would like to hear
 speak("Ik ben blij dat je vandaag de tijd hebt genomen om hier te komen. Ik vind het erg leuk om nieuwe mensen te ontmoeten en actuele gebeurtenissen in hun omgeving en in de wereld te bespreken. Vandaag zal ik je een paar nieuwsberichten laten horen van N.O.S. Zou je willen horen over drie actuele gebeurtenissen, twee actuele gebeurtenissen, of één actuele gebeurtenis?")  # "Would you like to hear three, two, or one current event?"
 
+# Loop until a valid number of events is heard
+event_choice = None
+while not event_choice:
+    event_choice = listen()
+    if event_choice:
+        if "drie" in event_choice:
+            num_events = 3
+        elif "twee" in event_choice:
+            num_events = 2
+        elif "één" in event_choice or "een" in event_choice:
+            num_events = 1
+        else:
+            speak("Sorry, dat is geen geldige keuze. Zeg alsjeblieft één, twee of drie.")  # "Sorry, that's not a valid option. Please say one, two, or three."
+            event_choice = None
+    else:
+        speak("Sorry, ik heb je niet goed verstaan. Probeer het opnieuw.")  # "Sorry, I didn't catch that. Please try again."
+
+
 # Select and speak the requested number of events
 selected_news = random.sample(news_content, num_events)
 
