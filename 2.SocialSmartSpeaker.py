@@ -51,7 +51,7 @@ speak("Hallo! Ik ben Jip, hoe heet jij?")  # "Hello! I am Jip. What's your name?
 
 time.sleep(3)  # Wait for 3 seconds
 # Ask how many events they would like to hear
-speak("Ik ben blij dat je vandaag de tijd hebt genomen om hier te komen. Ik vind het erg leuk om nieuwe mensen te ontmoeten en actuele gebeurtenissen in hun omgeving en in de wereld te bespreken. Vandaag zal ik je een paar nieuwsberichten laten horen van N.O.S. Zou je willen horen over drie actuele gebeurtenissen, twee actuele gebeurtenissen, of één actuele gebeurtenis?")  # "Would you like to hear three, two, or one current event?"
+speak("Ik ben blij dat je vandaag de tijd hebt genomen om hier te komen. Ik vind het erg leuk om nieuwe mensen te ontmoeten en actuele gebeurtenissen in hun omgeving en in de wereld te bespreken. Vandaag zal ik je een paar nieuwsberichten laten horen. Zou je willen horen over drie actuele gebeurtenissen, twee actuele gebeurtenissen, of één actuele gebeurtenis?")  # "Would you like to hear three, two, or one current event?"
 
 # Loop until a valid number of events is heard
 event_choice = None
@@ -77,7 +77,7 @@ selected_news = random.sample(news_content, num_events)
 print(selected_news)
 
 for i, news_item in enumerate(selected_news, 1):
-    speak(news_item)
+    speak("Uit het N.O.S. Journaal:", news_item)
 
 # After speaking the selected news content, ask for the user's feedback
 speak("Dat is alle informatie die ik vandaag heb. Wat vond je ervan?")  # "That's all the information I have for today. What did you think?"
