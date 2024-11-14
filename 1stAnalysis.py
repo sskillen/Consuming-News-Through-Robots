@@ -11,24 +11,24 @@ os.chdir(directory_path)
 # Verify the current working directory
 print("Current working directory:", os.getcwd())
 # Load Qualtrics surveys
-survey1 = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+13,+2024_09.44.csv")
-survey2 = pd.read_csv("Pre-Survey_November+13,+2024_09.42.csv")
-survey3 = pd.read_csv("CORRECTION2.0_November+13,+2024_09.45.csv")
+main = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+13,+2024_09.44.csv")
+pre = pd.read_csv("Pre-Survey_November+13,+2024_09.42.csv")
+corr = pd.read_csv("CORRECTION2.0_November+13,+2024_09.45.csv")
 excel_data = pd.read_csv("Random Device list11.csv")
 
 
 # remove rows that don't have answers to survey 1 (main survey) #these are participants who never did the full experiment
-survey1 = survey1.dropna(subset=['check_1'])
+#main1 = main.dropna(subset=['check_1']) this code neeeds moved to merged?
 #survey1.to_excel('droppedSurvey1.xlsx', index=False)
 # Optionally, preview the first few rows to better understand the data structure
-print("\nSurvey 1 Preview:\n", survey1.head())
-print("\nSurvey 2 Preview:\n", survey2.head())
-print("\nSurvey 3 Preview:\n", survey3.head())
+print("\nSurvey 1 Preview:\n", main1.head())
+print("\nSurvey 2 Preview:\n", pre.head())
+print("\nSurvey 3 Preview:\n", corr.head())
 
 # Show column names for each survey
-print("Survey 1 Columns:", survey1.columns)
-print("Survey 2 Columns:", survey2.columns)
-print("Survey 3 Columns:", survey3.columns)
+print("Survey 1 Columns:", main1.columns)
+print("Survey 2 Columns:", pre.columns)
+print("Survey 3 Columns:", corr.columns)
 
 # Show column names for the Excel file
 print("Excel Data Columns:", excel_data.columns)
@@ -37,6 +37,11 @@ print("Excel Data Columns:", excel_data.columns)
 
 # Preview the first few rows of the Excel data
 print("\nExcel Data Preview:\n", excel_data.head())
+
+
+# Now, all the surveys have been updated with the email removed
+
+
 
 # Specify the columns to replace
 #columns_to_replace = [f"Q27_{i}" for i in range(1, 9)]
@@ -57,36 +62,72 @@ columns_to_remove = [
 ]
 
 # Remove columns from each survey
-survey11 = survey1.drop(columns=columns_to_remove, errors='ignore')
-survey21 = survey2.drop(columns=columns_to_remove, errors='ignore')
-survey31 = survey3.drop(columns=columns_to_remove, errors='ignore')
+main2 = main1.drop(columns=columns_to_remove, errors='ignore')
+pre1 = pre.drop(columns=columns_to_remove, errors='ignore')
+corr1 = corr.drop(columns=columns_to_remove, errors='ignore')
 
 
 
 # Show column names for each survey
-print("Survey 1 Columns:", survey11.columns)
-print("Survey 2 Columns:", survey21.columns)
-print("Survey 3 Columns:", survey31.columns)
+print("Survey 1 Columns:", main2.columns)
+print("Survey 2 Columns:", pre1.columns)
+print("Survey 3 Columns:", corr1.columns)
 
 # Show column names for the Excel file
 print("Excel Data Columns:", excel_data.columns)
 
 # Rename columns in each survey and Excel data
-survey12 = survey11.rename(columns={"email": "Email"})
-survey22 = survey21.rename(columns={"email address_2": "Email"})
-survey32 = survey31.rename(columns={"Q1": "Email"})
+main3 = main2.rename(columns={"email": "Email"})
+pre2 = pre1.rename(columns={"email address_2": "Email"})
+corr2 = corr1.rename(columns={"Q1": "Email"})
+
+pre2 = pre2.dropna(subset=['Email'])  # Drops rows with missing emails
 
 # Verify changes
-print("Survey 1 columns:", survey12.columns)
-print("Survey 2 columns:", survey22.columns)
-print("Survey 3 columns:", survey32.columns)
+print("Survey 1 Columns:", main3.columns)
+print("Survey 2 Columns:", pre2.columns)
+print("Survey 3 Columns:", corr2.columns)
 print("Excel data columns:", excel_data.columns)
 
+# List of DataFrames that hold your survey data
+surveys = [main3, pre2, corr2]  # Add all your survey DataFrames here
+
+# Iterate over each survey and remove the specified email
+for survey in surveys:
+    survey.drop(survey[survey['Email'] == 'summerskillen@gmail.com'].index, inplace=True)
+
 # Strip whitespace and convert to lowercase for consistency
-survey12["Email"] = survey12["Email"].str.strip().str.lower()
-survey22["Email"] = survey22["Email"].str.strip().str.lower()
-survey32["Email"] = survey32["Email"].str.strip().str.lower()
+main3["Email"] = main3["Email"].str.strip().str.lower()
+pre2["Email"] = pre2["Email"].str.strip().str.lower()
+corr2["Email"] = corr2["Email"].str.strip().str.lower()
 excel_data["Email"] = excel_data["Email"].str.strip().str.lower()
+
+pre2.to_csv("3pre_survey.csv")
+
+# Define columns to replace
+columns_to_replace = [f"Q27_{i}" for i in range(1, 9)]
+
+# Assuming pre2 and corr2 are your DataFrames for the pre-survey and correction survey
+pre2.set_index('Email', inplace=True)  # Set 'Email' as the index for pre_survey
+corr2.set_index('Email', inplace=True)  # Set 'Email' as the index for correction_survey
+
+# Ensure both DataFrames have the same rows before applying isin(), but keep all data
+common_emails = pre2.index.intersection(corr2.index)
+print(common_emails)
+
+# Update the rows with the common emails
+pre2.loc[common_emails, columns_to_replace] = corr2.loc[common_emails, columns_to_replace]
+
+pre2.to_csv("3pre_survey.csv")
+
+
+
+
+
+
+
+
+
 
 # Merge survey1 and survey2 on the "Email" column
 merged_data = pd.merge(survey12, survey22, on="Email", how="outer")
@@ -121,17 +162,3 @@ merged_data3.to_excel('merge_data3.xlsx', index=False)
 
 
 
-# Define columns to replace
-columns_to_replace = [f"Q27_{i}" for i in range(1, 9)]
-
-# Set the email column as the index to match rows
-pre_survey.set_index("email", inplace=True)
-correction_survey.set_index("email", inplace=True)
-
-# Update only matching rows
-for column in columns_to_replace:
-    pre_survey.loc[pre_survey.index.isin(correction_survey.index), column] = correction_survey[column]
-
-# Reset the index to return email as a column and save the updated DataFrame
-pre_survey.reset_index(inplace=True)
-pre_survey.to_csv("path/to/updated_pre_survey.csv", index=False)
