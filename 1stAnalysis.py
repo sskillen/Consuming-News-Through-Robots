@@ -16,17 +16,13 @@ pre = pd.read_csv("Pre-Survey_November+13,+2024_09.42.csv")
 corr = pd.read_csv("CORRECTION2.0_November+13,+2024_09.45.csv")
 excel_data = pd.read_csv("Random Device list11.csv")
 
-
-# remove rows that don't have answers to survey 1 (main survey) #these are participants who never did the full experiment
-#main1 = main.dropna(subset=['check_1']) this code neeeds moved to merged?
-#survey1.to_excel('droppedSurvey1.xlsx', index=False)
 # Optionally, preview the first few rows to better understand the data structure
-print("\nSurvey 1 Preview:\n", main1.head())
+print("\nSurvey 1 Preview:\n", main.head())
 print("\nSurvey 2 Preview:\n", pre.head())
 print("\nSurvey 3 Preview:\n", corr.head())
 
 # Show column names for each survey
-print("Survey 1 Columns:", main1.columns)
+print("Survey 1 Columns:", main.columns)
 print("Survey 2 Columns:", pre.columns)
 print("Survey 3 Columns:", corr.columns)
 
@@ -39,18 +35,9 @@ print("Excel Data Columns:", excel_data.columns)
 print("\nExcel Data Preview:\n", excel_data.head())
 
 
-# Now, all the surveys have been updated with the email removed
 
 
 
-# Specify the columns to replace
-#columns_to_replace = [f"Q27_{i}" for i in range(1, 9)]
-
-# Replace these columns in pre_survey with the same columns from correction_survey
-#survey2[columns_to_replace] = survey3[columns_to_replace]
-
-# inspect updated pre-survey with corrected statements
-#survey2.to_excel('corrected.xlsx', index=False)
 
 # List of columns to remove
 columns_to_remove = [
@@ -62,7 +49,7 @@ columns_to_remove = [
 ]
 
 # Remove columns from each survey
-main2 = main1.drop(columns=columns_to_remove, errors='ignore')
+main2 = main.drop(columns=columns_to_remove, errors='ignore')
 pre1 = pre.drop(columns=columns_to_remove, errors='ignore')
 corr1 = corr.drop(columns=columns_to_remove, errors='ignore')
 
@@ -82,6 +69,13 @@ pre2 = pre1.rename(columns={"email address_2": "Email"})
 corr2 = corr1.rename(columns={"Q1": "Email"})
 
 pre2 = pre2.dropna(subset=['Email'])  # Drops rows with missing emails
+# Clean the email column in each DataFrame by stripping whitespaces and converting to lowercase
+main3["Email"] = main3["Email"].str.strip().str.lower()
+pre2["Email"] = pre2["Email"].str.strip().str.lower()
+corr2["Email"] = corr2["Email"].str.strip().str.lower()
+excel_data["Email"] = excel_data["Email"].str.strip().str.lower()
+
+
 
 # Verify changes
 print("Survey 1 Columns:", main3.columns)
@@ -89,20 +83,7 @@ print("Survey 2 Columns:", pre2.columns)
 print("Survey 3 Columns:", corr2.columns)
 print("Excel data columns:", excel_data.columns)
 
-# List of DataFrames that hold your survey data
-surveys = [main3, pre2, corr2]  # Add all your survey DataFrames here
 
-# Iterate over each survey and remove the specified email
-for survey in surveys:
-    survey.drop(survey[survey['Email'] == 'summerskillen@gmail.com'].index, inplace=True)
-
-# Strip whitespace and convert to lowercase for consistency
-main3["Email"] = main3["Email"].str.strip().str.lower()
-pre2["Email"] = pre2["Email"].str.strip().str.lower()
-corr2["Email"] = corr2["Email"].str.strip().str.lower()
-excel_data["Email"] = excel_data["Email"].str.strip().str.lower()
-
-pre2.to_csv("3pre_survey.csv")
 
 # Define columns to replace
 columns_to_replace = [f"Q27_{i}" for i in range(1, 9)]
@@ -118,28 +99,19 @@ print(common_emails)
 # Update the rows with the common emails
 pre2.loc[common_emails, columns_to_replace] = corr2.loc[common_emails, columns_to_replace]
 
-pre2.to_csv("3pre_survey.csv")
-
-
-
-
-
-
-
+pre2.to_csv("pre_survey.csv")
 
 
 
 # Merge survey1 and survey2 on the "Email" column
-merged_data = pd.merge(survey12, survey22, on="Email", how="outer")
+merged_data = pd.merge(pre2, main3, on="Email", how="outer")
 
 # Merge the result with survey3 on the "Email" column
-merged_data = pd.merge(merged_data, survey32, on="Email", how="outer")
+merged_data1 = pd.merge(merged_data, excel_data, on="Email", how="outer")
 
-# Merge the result with excel_data on the "Email" column
-merged_data = pd.merge(merged_data, excel_data, on="Email", how="outer")
 
-print(merged_data)
-
+print(merged_data1)
+merged_data1.to_csv("merged_data1.csv")
 
 #check original # of rows
 print(f"Survey 1 rows: {len(survey1)}")
