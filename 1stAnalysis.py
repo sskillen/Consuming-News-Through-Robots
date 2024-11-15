@@ -121,3 +121,13 @@ merged_data1.to_csv("merged_data1.csv")
 filtered_data = merged_data1[merged_data1["check_1"].notna()]
 filtered_data.to_csv("filtered_data.csv")
 
+import random
+
+# Generate unique random IDs based on the length of the DataFrame
+num_ids = len(filtered_data)
+random_ids = random.sample(range(1, num_ids + 1), num_ids)
+
+# Replace the "Email" column with the random IDs
+filtered_data["Email"] = random_ids
+print(filtered_data.head())
+
