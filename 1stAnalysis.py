@@ -53,6 +53,10 @@ main2 = main.drop(columns=columns_to_remove, errors='ignore')
 pre1 = pre.drop(columns=columns_to_remove, errors='ignore')
 corr1 = corr.drop(columns=columns_to_remove, errors='ignore')
 
+# Remove NA rows from excel file (pariticpants who cancelled or no showed)
+excel_data = excel_data.dropna(subset= ['1st Piece'])
+
+
 
 
 # Show column names for each survey
@@ -113,24 +117,7 @@ merged_data1 = pd.merge(merged_data, excel_data, on="Email", how="outer")
 print(merged_data1)
 merged_data1.to_csv("merged_data1.csv")
 
-#check original # of rows
-print(f"Survey 1 rows: {len(survey1)}")
-print(f"Survey 2 rows: {len(survey2)}")
-print(f"Survey 3 rows: {len(survey3)}")
-print(f"Excel Data rows: {len(excel_data)}")
-
-# number of rows in merged data
-print(f"Merged Data rows: {len(merged_data)}")
-
-# drop NA's from Email column
-merged_data2 = merged_data.dropna(subset=["Email"])
-print(merged_data2)
-
-# remove rows that don't have answers to survey 1 (main survey) #these are participants who never did the full experiment
-merged_data3 = merged_data2.dropna(subset=['check_1'])
-
-# Assuming merge_data2 is your DataFrame
-merged_data3.to_excel('merge_data3.xlsx', index=False)
-
-
+# Drop rows where 'check_1' is NaN
+filtered_data = merged_data1[merged_data1["check_1"].notna()]
+filtered_data.to_csv("filtered_data.csv")
 
