@@ -29,10 +29,20 @@ print("Survey 3 Columns:", corr.columns)
 # Show column names for the Excel file
 print("Excel Data Columns:", excel_data.columns)
 
+print(pre["EndDate"].head(50))  # Replace 'pre_survey' with your DataFrame name
+
+# Step 1: Remove non-datetime rows based on a keyword
+pre = pre[~pre["EndDate"].str.contains("ImportId", na=False)]
+pre = pre[pre["EndDate"] != "End Date"]
+
+# Step 2: Convert to datetime
+pre["EndDate"] = pd.to_datetime(pre["EndDate"], errors='coerce')
+
+# Step 3: Drop rows with NaT
+pre = pre.dropna(subset=["EndDate"])
+print(pre)
 
 
-# Preview the first few rows of the Excel data
-print("\nExcel Data Preview:\n", excel_data.head())
 
 
 
@@ -41,7 +51,7 @@ print("\nExcel Data Preview:\n", excel_data.head())
 
 # List of columns to remove
 columns_to_remove = [
-    'StartDate', 'EndDate', 'Status', 'IPAddress', 'Progress',
+    'StartDate', 'Status', 'IPAddress', 'Progress',
     'Duration (in seconds)', 'Finished', 'RecordedDate', 'ResponseId',
     'RecipientLastName', 'RecipientFirstName', 'RecipientEmail',
     'ExternalReference', 'LocationLatitude', 'LocationLongitude',
@@ -79,6 +89,13 @@ pre2["Email"] = pre2["Email"].str.strip().str.lower()
 corr2["Email"] = corr2["Email"].str.strip().str.lower()
 excel_data["Email"] = excel_data["Email"].str.strip().str.lower()
 
+# Sort by 'Email' and 'Enddate' to keep the most recent date
+pre2 = pre2.sort_values(by=['Email', 'EndDate'])
+
+# Drop duplicates, keeping the last occurrence for each email
+pre2 = pre2.drop_duplicates(subset='Email', keep='last')
+
+print(pre2)
 
 
 # Verify changes
@@ -117,6 +134,22 @@ merged_data1 = pd.merge(merged_data, excel_data, on="Email", how="outer")
 print(merged_data1)
 merged_data1.to_csv("merged_data1.csv")
 
+
+from fuzzywuzzy import fuzz, process
+
+# Check for similar emails
+emails = merged_data1['Email'].unique()
+for email in emails:
+    matches = process.extract(email, emails, scorer=fuzz.ratio)
+    similar_emails = [match for match in matches if match[1] > 85]  # Threshold of 85 for similarity
+    if len(similar_emails) > 1:
+        print(f"Similar emails to {email}: {similar_emails}")
+
+
+
+
+
+
 # Drop rows where 'check_1' is NaN
 filtered_data = merged_data1[merged_data1["check_1"].notna()]
 filtered_data.to_csv("filtered_data.csv")
@@ -131,3 +164,11 @@ random_ids = random.sample(range(1, num_ids + 1), num_ids)
 filtered_data["Email"] = random_ids
 print(filtered_data.head())
 
+# Age summary
+print(filtered_data['Age'].describe())
+
+# Gender distribution
+print(filtered_data['Gender'].value_counts(normalize=True) * 100)
+
+# Education distribution
+print(filtered_data['Education'].value_counts(normalize=True) * 100)
