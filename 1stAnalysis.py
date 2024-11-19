@@ -130,29 +130,86 @@ merged_data = pd.merge(pre2, main3, on="Email", how="outer")
 # Merge the result with survey3 on the "Email" column
 merged_data1 = pd.merge(merged_data, excel_data, on="Email", how="outer")
 
-
-print(merged_data1)
-merged_data1.to_csv("merged_data1.csv")
-
-
 from fuzzywuzzy import fuzz, process
 
-# Check for similar emails
+# Step 1: Get unique emails
 emails = merged_data1['Email'].unique()
+
+# Step 2: Create a mapping dictionary
+email_mapping = {}
+visited = set()
+
+
 for email in emails:
-    matches = process.extract(email, emails, scorer=fuzz.ratio)
-    similar_emails = [match for match in matches if match[1] > 85]  # Threshold of 85 for similarity
-    if len(similar_emails) > 1:
-        print(f"Similar emails to {email}: {similar_emails}")
+    if email not in visited:
+        # Find similar emails
+        matches = process.extract(email, emails, scorer=fuzz.ratio)
+        similar_emails = [match[0] for match in matches if match[1] > 85]  # Similarity threshold
+        
+        # Standardize to the first email in the group
+        standard_email = similar_emails[0]
+        
+        # Add all similar emails to the mapping and mark them as visited
+        for similar_email in similar_emails:
+            email_mapping[similar_email] = standard_email
+            visited.add(similar_email)
+
+# Step 3: Add a new column for standardized emails
+merged_data1['Standardized_Email'] = merged_data1['Email'].replace(email_mapping)
+
+print(merged_data1)
 
 
 
+# Function to define aggregation rules dynamically
+def custom_agg(series):
+    if series.name == "Condition":  # Special case for the 'Condition' column
+        return ', '.join(series.dropna().astype(str).unique())  # Combine all unique values
+    elif series.dtype.kind in 'iufc':  # For numeric columns
+        return series.sum()  # Use sum
+    else:  # For other non-numeric columns
+        return ', '.join(series.dropna().astype(str).unique())
+
+
+# Apply aggregation
+filtered_data = merged_data1.groupby('Standardized_Email').agg(custom_agg).reset_index()
+
+
+import numpy as np
+
+# Replace empty strings or unhelpful placeholders with NaN
+filtered_data['check_1'] = filtered_data['check_1'].replace(
+    ['', r'^\s*$', 'We vragen je om te denken aan het nieuws dat je zojuist hoorde. \n\nKies "goed" of "fout" voor de onderstaande stellingen. - De naam van het toetsel waarmee ik sprak was "Jip"', '{"ImportId":"QID1_10"}'], 
+    np.nan,
+    regex=True
+)
+
+# Drop rows where 'check_1' is NaN (these are people who never completed the full experiment)
+filtered_data = filtered_data.dropna(subset=['check_1'])
+
+# Reset index for cleaner output
+filtered_data.reset_index(drop=True, inplace=True)
+
+#check that only meaningful values are kept
+print(filtered_data['check_1'].unique())
+
+
+filtered_data['EndDate_x'] = pd.to_datetime(filtered_data['EndDate_x'], errors='coerce')
+filtered_data['EndDate_y'] = pd.to_datetime(filtered_data['EndDate_y'], errors='coerce')
+
+# Define the cutoff date
+cutoff_date = pd.to_datetime("2024-10-28")
+
+filtered_data = filtered_data[
+    (filtered_data['EndDate_x'] > cutoff_date) | 
+    (filtered_data['EndDate_y'] > cutoff_date)
+]
+
+
+filtered_data.to_csv('filtereddata2.csv')
 
 
 
-# Drop rows where 'check_1' is NaN
-filtered_data = merged_data1[merged_data1["check_1"].notna()]
-filtered_data.to_csv("filtered_data.csv")
 
 import random
 
