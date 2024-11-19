@@ -194,11 +194,12 @@ filtered_data.reset_index(drop=True, inplace=True)
 print(filtered_data['check_1'].unique())
 
 
-filtered_data['EndDate_x'] = pd.to_datetime(filtered_data['EndDate_x'], errors='coerce')
-filtered_data['EndDate_y'] = pd.to_datetime(filtered_data['EndDate_y'], errors='coerce')
+filtered_data['EndDate_x'] = pd.to_datetime(filtered_data['EndDate_x'], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
+filtered_data['EndDate_y'] = pd.to_datetime(filtered_data['EndDate_y'], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
 
-# Define the cutoff date
-cutoff_date = pd.to_datetime("2024-10-28")
+
+cutoff_date = pd.to_datetime("2024-10-29 00:00:00")
+
 
 filtered_data = filtered_data[
     (filtered_data['EndDate_x'] > cutoff_date) | 
@@ -206,7 +207,7 @@ filtered_data = filtered_data[
 ]
 
 
-filtered_data.to_csv('filtereddata2.csv')
+filtered_data.to_csv('filtereddata4.csv')
 
 
 
