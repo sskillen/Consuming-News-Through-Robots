@@ -206,15 +206,39 @@ filtered_data2.to_csv('fixed.csv')
 import random
 
 # Generate unique random IDs based on the length of the DataFrame
-num_ids = len(filtered_data)
+num_ids = len(filtered_data2)
 random_ids = random.sample(range(1, num_ids + 1), num_ids)
 
 # Replace the "Email" column with the random IDs
-filtered_data["Email"] = random_ids
-print(filtered_data.head())
+filtered_data2["Email"] = random_ids
+print(filtered_data2.head())
+
+# Delete standarized email column for confidential data
+conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
+print(conf_dat.head())
+
+conf_dat.to_csv('conf_dat3.csv') 
+
+# Ensure Gender column is in the correct format (integer)
+conf_dat['Gender'] = pd.to_numeric(conf_dat['Gender'], errors='coerce')  # Converts '1', '2', '3' to numeric
+
+
+# Map gender values to categories
+gender_map = {1: 'Male', 2: 'Female', 3: 'Non-binary', 4: 'Prefer not to say'}
+conf_dat['Gender'] = conf_dat['Gender'].map(gender_map)
+
+# Convert to categorical type
+conf_dat['Gender'] = conf_dat['Gender'].astype('category')
+
+# Check the column data type and unique values
+print(conf_dat['Gender'].dtype)  # Should show 'category'
+print(conf_dat['Gender'].unique())  # Should show 'Male', 'Female', 'Non-binary', 'Unknown'
+
+# Check the result
+print(conf_dat['Gender'].describe())
 
 # Age summary
-print(filtered_data['Age'].describe())
+print(conf_dat['Age'].describe())
 
 # Gender distribution
 print(filtered_data['Gender'].value_counts(normalize=True) * 100)
