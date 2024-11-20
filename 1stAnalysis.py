@@ -12,9 +12,9 @@ os.chdir(directory_path)
 print("Current working directory:", os.getcwd())
 
 # Load Qualtrics surveys
-main = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+19,+2024_08.52.csv")
-pre = pd.read_csv("Pre-Survey_November+19,+2024_08.51.csv")
-corr = pd.read_csv("CORRECTION2.0_November+19,+2024_08.53.csv")
+main = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+20,+2024_08.33.csv")
+pre = pd.read_csv("Pre-Survey_November+20,+2024_08.32.csv")
+corr = pd.read_csv("CORRECTION2.0_November+20,+2024_08.33.csv")
 excel_data = pd.read_csv("Random Device list11.csv")
 
 # Show column names for each survey
@@ -219,13 +219,6 @@ print(conf_dat.head())
 
 conf_dat.to_csv('conf_dat3.csv') 
 
-# Ensure Gender column is in the correct format (integer)
-conf_dat['Gender'] = pd.to_numeric(conf_dat['Gender'], errors='coerce')  # Converts '1', '2', '3' to numeric
-
-
-# Map gender values to categories
-gender_map = {1: 'Male', 2: 'Female', 3: 'Non-binary', 4: 'Prefer not to say'}
-conf_dat['Gender'] = conf_dat['Gender'].map(gender_map)
 
 # Convert to categorical type
 conf_dat['Gender'] = conf_dat['Gender'].astype('category')
