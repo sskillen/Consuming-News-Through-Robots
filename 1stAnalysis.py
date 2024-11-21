@@ -263,4 +263,48 @@ conf_dat['Communication_Style'] = conf_dat['Condition'].apply(extract_communicat
 conf_dat['Device_Type'] = conf_dat['Condition'].apply(extract_device_type)
 
 # Display the DataFrame
-print(conf_dat)
+print(conf_dat) 
+
+
+# Map labels to numeric values
+label_to_value = {
+    "Heel erg oneens": 1,
+    "Oneens": 2,
+    "Neutraal": 3,
+    "Eens": 4,
+    "Heel erg eens": 5,
+}
+# Map Likert labels to numeric values for all trust columns
+trust_columns = [f'device_trust_{i}' for i in range(1, 13)]
+conf_dat[trust_columns] = conf_dat[trust_columns].applymap(lambda x: label_to_value[x])
+
+# Reverse code items 1, 2, and 3 (using the Likert scale, reverse the values)
+reverse_scale = 5
+reverse_columns = ['device_trust_1', 'device_trust_2', 'device_trust_3']
+conf_dat[reverse_columns] = reverse_scale + 1 - conf_dat[reverse_columns]
+
+# Calculate the overall trust score (average of all 12 items)
+conf_dat['Overall_Device_Trust'] = conf_dat[trust_columns].mean(axis=1)
+
+print(conf_dat['Overall_Device_Trust'])
+
+import numpy as np
+import seaborn as sns
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from scipy.stats import ttest_ind
+
+
+# Convert categorical variables
+conf_dat['Device_Type'] = conf_dat['Device_Type'].astype('category')
+conf_dat['Communication_Style'] = conf_dat['Communication_Style'].astype('category')
+
+# Summary statistics
+print(conf_dat[['Overall_Device_Trust']].describe())
+
+# Visualization
+sns.boxplot(x='Device_Type', y='Trust_News_Content', data=data)
+sns.boxplot(x='Communication_Style', y='Trust_Device', data=data)
+
+
+ 
