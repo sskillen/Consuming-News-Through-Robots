@@ -219,22 +219,48 @@ print(conf_dat.head())
 
 conf_dat.to_csv('conf_dat3.csv') 
 
+# List of columns to convert to categorical
+columns_to_convert = ['Gender', 'Education', 'Language']
 
-# Convert to categorical type
-conf_dat['Gender'] = conf_dat['Gender'].astype('category')
+# Convert each column to categorical
+for column in columns_to_convert:
+    conf_dat[column] = conf_dat[column].astype('category')
 
-# Check the column data type and unique values
-print(conf_dat['Gender'].dtype)  # Should show 'category'
-print(conf_dat['Gender'].unique())  # Should show 'Male', 'Female', 'Non-binary', 'Unknown'
+# Check the data types to confirm the conversion
+print(conf_dat.dtypes)
 
-# Check the result
-print(conf_dat['Gender'].describe())
+# Display a summary of the converted columns
+print(conf_dat[columns_to_convert].describe())
 
-# Age summary
-print(conf_dat['Age'].describe())
+# Education summary
+print(conf_dat['Education'].describe())
 
 # Gender distribution
-print(filtered_data['Gender'].value_counts(normalize=True) * 100)
+print(conf_dat['Gender'].value_counts(normalize=True) * 100)
 
 # Education distribution
-print(filtered_data['Education'].value_counts(normalize=True) * 100)
+print(conf_dat['Education'].value_counts(normalize=True) * 100)
+
+print(conf_dat['Language'].value_counts(normalize=True) * 100)
+
+# Define mapping logic
+def extract_communication_style(condition):
+    if 'transactional' in condition:
+        return 'Transactional'
+    elif 'social' in condition:
+        return 'Social'
+    return None
+
+def extract_device_type(condition):
+    if 'Robot' in condition:
+        return 'Robot'
+    elif 'Speaker' in condition:
+        return 'Speaker'
+    return None
+
+# Apply mappings
+conf_dat['Communication_Style'] = conf_dat['Condition'].apply(extract_communication_style)
+conf_dat['Device_Type'] = conf_dat['Condition'].apply(extract_device_type)
+
+# Display the DataFrame
+print(conf_dat)
