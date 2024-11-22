@@ -303,8 +303,11 @@ conf_dat['Communication_Style'] = conf_dat['Communication_Style'].astype('catego
 print(conf_dat[['Overall_Device_Trust']].describe())
 
 # Visualization
-sns.boxplot(x='Device_Type', y='Trust_News_Content', data=data)
-sns.boxplot(x='Communication_Style', y='Trust_Device', data=data)
+import matplotlib.pyplot as plt
 
-
+sns.boxplot(x='Device_Type', y='Overall_Device_Trust', data=conf_dat)
+sns.boxplot(x='Communication_Style', y='Overall_Device_Trust', data=conf_dat)
+sns.boxplot(x='Condition', y='Overall_Device_Trust', data=conf_dat)
+# Show the plot
+plt.show()
  
