@@ -363,5 +363,11 @@ newspiece_scale = {
 # Map Likert labels to numeric values for all trust columns
 newspiece_trust = ['trust-VVD', 'trust-student grant', 'trust-statistic', 'trust-climate', 'trust-judges']
 
-conf_dat[newspiece_trust] = conf_dat[newspiece_trust].applymap(lambda x: newspiece_scale[x])
+# Map Likert scale labels to numeric values
+conf_dat[newspiece_trust] = conf_dat[newspiece_trust].applymap(lambda x: newspiece_scale.get(x, None))
 
+
+# Calculate average trust score for news items, ignoring NaN values
+df['average_trust_score'] = df.mean(axis=1, skipna=True)
+
+print(df)
