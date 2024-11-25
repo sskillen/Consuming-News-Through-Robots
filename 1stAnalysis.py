@@ -265,6 +265,10 @@ conf_dat['Device_Type'] = conf_dat['Condition'].apply(extract_device_type)
 # Display the DataFrame
 print(conf_dat) 
 
+condition_counts = conf_dat['Condition'].value_counts()
+
+# Print the number of participants in each condition
+print(condition_counts)
 
 # Map labels to numeric values
 label_to_value = {
@@ -305,9 +309,59 @@ print(conf_dat[['Overall_Device_Trust']].describe())
 # Visualization
 import matplotlib.pyplot as plt
 
+#descriptive statistics
 sns.boxplot(x='Device_Type', y='Overall_Device_Trust', data=conf_dat)
 sns.boxplot(x='Communication_Style', y='Overall_Device_Trust', data=conf_dat)
 sns.boxplot(x='Condition', y='Overall_Device_Trust', data=conf_dat)
 # Show the plot
 plt.show()
- 
+
+# Map labels to numeric values
+label_to_value1 = {
+    "Beschrijft het erg slecht": 1,
+    "Beschrijft het slecht": 2,
+    "Beschrijft het enigszins slecht": 3,
+    "Neutraal": 4,
+    "Beschrijft het enigszins goed": 5,
+    "Beschrijft het goed": 6,
+    "Beschrijft het erg goed": 7,
+}
+# Map Likert labels to numeric values for all trust columns
+trustinfo_columns = [f'Trust in Information_{i}' for i in range(1, 4)]
+conf_dat[trustinfo_columns] = conf_dat[trustinfo_columns].applymap(lambda x: label_to_value1[x])
+
+
+# Calculate the overall trust in information by averaging the three columns
+conf_dat['Overall_Trust_in_Info'] = conf_dat[trustinfo_columns].mean(axis=1)
+
+# Check the new column
+print(conf_dat[['Trust in Information_1', 'Trust in Information_2', 'Trust in Information_3', 'Overall_Trust_in_Info']].head())
+
+# Reverse code items 1, 2, and 3 (using the Likert scale, reverse the values)
+reverse_scale = 5
+reverse_columns1 = [f'credibility_{i}' for i in range(1, 9)]
+# Ensure all values are numeric, and replace non-numeric values with NaN
+conf_dat[reverse_columns1] = conf_dat[reverse_columns1].apply(pd.to_numeric, errors='coerce')
+
+conf_dat[reverse_columns1] = reverse_scale + 1 - conf_dat[reverse_columns1]
+
+
+# Calculate the overall credibility by averaging the three columns
+conf_dat['Overall_credibility'] = conf_dat[reverse_columns1].mean(axis=1)
+
+# Check the new column
+print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_credibility']].head())
+
+newspiece_scale = {
+    "Heel weinig vertrouwen": 1,
+    "Weinig vertrouwen": 2,
+    "Neutraal": 3,
+    "Vertrouwen": 4,
+    "Veel vertrouwen": 5,
+}
+
+# Map Likert labels to numeric values for all trust columns
+newspiece_trust = ['trust-VVD', 'trust-student grant', 'trust-statistic', 'trust-climate', 'trust-judges']
+
+conf_dat[newspiece_trust] = conf_dat[newspiece_trust].applymap(lambda x: newspiece_scale[x])
+
