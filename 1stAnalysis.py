@@ -138,7 +138,7 @@ for email in emails:
 merged_data1['Standardized_Email'] = merged_data1['Email'].replace(email_mapping)
 
 print(merged_data1)
-merged_data1.to_csv('mappedemails.csv') #data still here at this point
+
 
 # Following steps are to consolidate all data from one participant based off their standarized emails into one row
 
@@ -199,7 +199,6 @@ filtered_data2 = filtered_data1[
 # Print filtered data
 print(filtered_data2)
 
-filtered_data2.to_csv('fixed.csv')
 
 
 
@@ -217,7 +216,6 @@ print(filtered_data2.head())
 conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
 print(conf_dat.head())
 
-conf_dat.to_csv('conf_dat3.csv') 
 
 # List of columns to convert to categorical
 columns_to_convert = ['Gender', 'Education', 'Language']
@@ -368,6 +366,6 @@ conf_dat[newspiece_trust] = conf_dat[newspiece_trust].applymap(lambda x: newspie
 
 
 # Calculate average trust score for news items, ignoring NaN values
-df['average_trust_score'] = df.mean(axis=1, skipna=True)
+conf_dat['average_newspiece'] = conf_dat[newspiece_trust].mean(axis=1, skipna=True)
 
-print(df)
+print(conf_dat['average_newspiece'])
