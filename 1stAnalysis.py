@@ -373,49 +373,24 @@ print(conf_dat['average_newspiece'])
 print(conf_dat.columns)
 print(conf_dat[['average_newspiece', 'Overall_credibility', 'Overall_Trust_in_Info']].head())
 
-
-
-from sklearn.preprocessing import StandardScaler
-
-# Select the columns to standardize
-columns_to_standardize = ['average_newspiece', 'Overall_credibility', 'Overall_Trust_in_Info']
-
-# Initialize the scaler
-scaler = StandardScaler()
-
-# Fit and transform the selected columns
-conf_dat[columns_to_standardize] = scaler.fit_transform(conf_dat[columns_to_standardize])
-
-
-conf_dat['FinalTrust_in_News'] = conf_dat[['average_newspiece', 'Overall_credibility', 'Overall_Trust_in_Info']].mean(axis=1)
-
-print(conf_dat['FinalTrust_in_News'].describe())
-
-#Rescale to likert 1-7
-conf_dat['FinalTrust_in_News_Rescaled'] = (
-    (conf_dat['FinalTrust_in_News'] - conf_dat['FinalTrust_in_News'].min()) /
-    (conf_dat['FinalTrust_in_News'].max() - conf_dat['FinalTrust_in_News'].min())
-) * (7 - 1) + 1
-
-print(conf_dat['FinalTrust_in_News_Rescaled'].describe())
-
-#Histogram of distribution
-
-conf_dat['FinalTrust_in_News_Rescaled'].hist(bins=7)
-plt.title('Rescaled Trust in News')
-plt.xlabel('FinalTrust_in_News_Rescaled')
-plt.ylabel('Frequency')
-plt.show()
-
-
 # Print all column names as a list
 print(list(conf_dat.columns))
+
 # List of columns you want to combine into an average score
 trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
 #one item needs reversed propensity_tech = ['PropsensityTrustTech_1', 'PropsensityTrustTech_2', 'PropsensityTrustTech_3', 'PropsensityTrustTech_4', 'PropsensityTrustTech_5', 'PropsensityTrustTech_6']
-#reverse code and criterion items attitude_robots = ['AttitudeRobots1_1','AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5', 'AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_8', 'AttitudeRobots2_1', 'AttitudeRobots2_2', 'AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7', 'AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4', 'Q27_5', 'Q27_6', 'Q27_7', 'Q27_8']
+# criterion items removed from attitude robots because they are not part of the scale
+#reverse code attitude_robots = ['AttitudeRobots1_1','AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5', 'AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_8', 'AttitudeRobots2_1', 'AttitudeRobots2_2', 'AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7', 'AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
+personal_positive = ['AttitudeRobots1_1', 'AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5']
+personal_negative = []
+societal_positive = []
+societal_negative = []
+
 useability = ['Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3', 'Usability/Performanc_4', 'Usability/Performanc_5', 'Usability/Performanc_6', 'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9', 'Usability/Performanc_10']
 enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']
 likeability = ['Likeability_1', 'Likeability_2', 'Likeability_3', 'Likeability_4', 'Likeability_5']
 IQ = ['PercievedIQ_1', 'PercievedIQ_2', 'PercievedIQ_3', 'PercievedIQ_4', 'PercievedIQ_5']
 anthro = ['Anthropomorphism_1', 'Anthropomorphism_2', 'Anthropomorphism_3', 'Anthropomorphism_4', 'Anthropomorphism_5']
+
+# Save to a specific directory
+conf_dat.to_csv('conf.dat.csv', index=False)
