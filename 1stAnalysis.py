@@ -378,13 +378,32 @@ print(list(conf_dat.columns))
 
 # List of columns you want to combine into an average score
 trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
-#one item needs reversed propensity_tech = ['PropsensityTrustTech_1', 'PropsensityTrustTech_2', 'PropsensityTrustTech_3', 'PropsensityTrustTech_4', 'PropsensityTrustTech_5', 'PropsensityTrustTech_6']
+# Reverse code the 'PropsensityTrustTech_4' column (5-point Likert scale)
+# Define a mapping from text to numeric values
+likert_techtrust = {
+    "Strongly disagree": 1,
+    "Somewhat disagree": 2,
+    "Niether agree nor disagree": 3,
+    "Somewhat agree": 4,
+    "Strongly agree": 5
+}
+
+# Map the textual values to numbers
+conf_dat['PropsensityTrustTech_4'] = conf_dat['PropsensityTrustTech_4'].map(likert_techtrust)
+
+# Reverse code the numeric values
+conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
+
+# Verify the mapping and reverse coding
+print(conf_dat[['PropsensityTrustTech_4', 'PropsensityTrustTech_4_Rev']].head())
+propensity_tech = ['PropsensityTrustTech_1', 'PropsensityTrustTech_2', 'PropsensityTrustTech_3', 'PropsensityTrustTech_4_Rev', 'PropsensityTrustTech_5', 'PropsensityTrustTech_6']
 # criterion items removed from attitude robots because they are not part of the scale
-#reverse code attitude_robots = ['AttitudeRobots1_1','AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5', 'AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_8', 'AttitudeRobots2_1', 'AttitudeRobots2_2', 'AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7', 'AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
+
 personal_positive = ['AttitudeRobots1_1', 'AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5']
-personal_negative = []
-societal_positive = []
-societal_negative = []
+personal_negative = ['AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_8', 'AttitudeRobots2_1', 'AttitudeRobots2_2']
+societal_positive = ['AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7']
+societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
+
 
 useability = ['Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3', 'Usability/Performanc_4', 'Usability/Performanc_5', 'Usability/Performanc_6', 'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9', 'Usability/Performanc_10']
 enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']
