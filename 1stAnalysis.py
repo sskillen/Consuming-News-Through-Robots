@@ -413,3 +413,41 @@ anthro = ['Anthropomorphism_1', 'Anthropomorphism_2', 'Anthropomorphism_3', 'Ant
 
 # Save to a specific directory
 conf_dat.to_csv('conf.dat.csv', index=False)
+
+
+# Define a mapping from text responses to numeric values (1 to 5)
+likert_to_numeric = {
+    'Heel erg eens': 5,
+    'Eens': 4,
+    'Neutraal': 3,
+    'Oneens': 2,
+    'Heel erg oneens': 1
+}
+
+# Apply the mapping to all relevant columns
+sus_columns = [
+    'Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3',
+    'Usability/Performanc_4', 'Usability/Performanc_5', 'Usability/Performanc_6',
+    'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9',
+    'Usability/Performanc_10'
+]
+
+conf_dat[sus_columns] = conf_dat[sus_columns].applymap(lambda x: likert_to_numeric[x])
+
+# Apply the SUS scoring rules
+sus_odd_items = ['Usability/Performanc_1', 'Usability/Performanc_3', 'Usability/Performanc_5',
+                 'Usability/Performanc_7', 'Usability/Performanc_9']
+sus_even_items = ['Usability/Performanc_2', 'Usability/Performanc_4', 'Usability/Performanc_6',
+                  'Usability/Performanc_8', 'Usability/Performanc_10']
+
+# Convert odd items (scale position - 1)
+conf_dat[sus_odd_items] = conf_dat[sus_odd_items].apply(lambda x: x - 1)
+
+# Convert even items (5 - scale position)
+conf_dat[sus_even_items] = conf_dat[sus_even_items].apply(lambda x: 5 - x)
+
+# Sum all contributions for each participant and multiply by 2.5 to get the SUS score
+conf_dat['SUS_Score'] = conf_dat[sus_odd_items + sus_even_items].sum(axis=1) * 2.5
+
+# Output the final SUS scores
+print(conf_dat[['SUS_Score']])
