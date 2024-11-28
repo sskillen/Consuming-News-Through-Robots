@@ -12,9 +12,9 @@ os.chdir(directory_path)
 print("Current working directory:", os.getcwd())
 
 # Load Qualtrics surveys
-main = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+20,+2024_08.33.csv")
-pre = pd.read_csv("Pre-Survey_November+20,+2024_08.32.csv")
-corr = pd.read_csv("CORRECTION2.0_November+20,+2024_08.33.csv")
+main = pd.read_csv("Main+Survey+(UPDATED)+-+NL_November+28,+2024_07.31.csv")
+pre = pd.read_csv("Pre-Survey_November+28,+2024_07.29.csv")
+corr = pd.read_csv("CORRECTION2.0_November+28,+2024_07.32.csv")
 excel_data = pd.read_csv("Random Device list11.csv")
 
 # Show column names for each survey
@@ -206,13 +206,17 @@ follow_up_yes = filtered_data2[filtered_data2['Follow up'] == 'Ja']
 # Extract the email addresses of those participants
 emails_follow_up = follow_up_yes['Email'].tolist()
 
+
 # Print the list of emails
 print(emails_follow_up)
-emails_follow_up.to_csv('follow_up_emails.csv', index=False)
 
-# Delete standarized email column for confidential data
-conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
-print(conf_dat.head())
+# Save the list of emails to a text file
+with open('emails.txt', 'w') as file:
+    for email in emails_follow_up:
+        file.write(email + '\n')
+
+
+
 
 import random
 
@@ -224,8 +228,10 @@ random_ids = random.sample(range(1, num_ids + 1), num_ids)
 filtered_data2["Email"] = random_ids
 print(filtered_data2.head())
 
-
-
+# Delete standarized email column for confidential data
+conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
+print(conf_dat.head())
+conf_dat.to_csv("confdat1.csv", index=False)
 
 # List of columns to convert to categorical
 columns_to_convert = ['Gender', 'Education', 'Language']
@@ -386,20 +392,30 @@ print(conf_dat[['average_newspiece', 'Overall_credibility', 'Overall_Trust_in_In
 # Print all column names as a list
 print(list(conf_dat.columns))
 
-# List of columns you want to combine into an average score
-trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
-# Reverse code the 'PropsensityTrustTech_4' column (5-point Likert scale)
+
+
 # Define a mapping from text to numeric values
-likert_techtrust = {
+likert_propensity = {
     "Strongly disagree": 1,
     "Somewhat disagree": 2,
-    "Niether agree nor disagree": 3,
+    "Neither agree nor disagree": 3, 
     "Somewhat agree": 4,
     "Strongly agree": 5
 }
 
-# Map the textual values to numbers
-conf_dat['PropsensityTrustTech_4'] = conf_dat['PropsensityTrustTech_4'].map(likert_techtrust)
+# List of columns for trust propensity and tech propensity
+trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
+tech_propensity = [f'PropsensityTrustTech_{i}' for i in range(1, 7)]
+print(conf_dat['PropensityTrust_1'])
+
+# Apply the mapping to the trust and tech propensity columns
+conf_dat[trust_propensity] = conf_dat[trust_propensity].applymap(lambda x: likert_propensity.get(x, x))
+conf_dat[tech_propensity] = conf_dat[tech_propensity].applymap(lambda x: likert_propensity.get(x, x))
+
+# Verify the results
+print(conf_dat[trust_propensity].head())
+print(conf_dat[tech_propensity].head())
+
 
 # Reverse code the numeric values
 conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
@@ -407,6 +423,19 @@ conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
 # Verify the mapping and reverse coding
 print(conf_dat[['PropsensityTrustTech_4', 'PropsensityTrustTech_4_Rev']].head())
 propensity_tech = ['PropsensityTrustTech_1', 'PropsensityTrustTech_2', 'PropsensityTrustTech_3', 'PropsensityTrustTech_4_Rev', 'PropsensityTrustTech_5', 'PropsensityTrustTech_6']
+
+propensity_columns = trust_propensity + propensity_tech
+
+# Apply conversion to numeric
+conf_dat[propensity_columns] = conf_dat[propensity_columns].apply(pd.to_numeric, errors='coerce')
+
+# Calculate average for propensity columns
+conf_dat['Avg_trustpropensity'] = conf_dat[trust_propensity].mean(axis=1)
+conf_dat['Avg_TECHtrust'] = conf_dat[propensity_tech].mean(axis=1)
+
+print(conf_dat['Avg_TECHtrust'])
+print(conf_dat['Avg_trustpropensity'])
+
 # criterion items removed from attitude robots because they are not part of the scale
 
 personal_positive = ['AttitudeRobots1_1', 'AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5']
@@ -499,5 +528,5 @@ conf_dat['Avg_IQ'] = conf_dat[IQ].mean(axis=1)
 # Calculate average for anthropomorphism
 conf_dat['Avg_Anthropomorphism'] = conf_dat[anthro].mean(axis=1)
 
-
-
+#Print a list of column names to get appropriate variables for correlation matrix
+print(list(conf_dat.columns))
