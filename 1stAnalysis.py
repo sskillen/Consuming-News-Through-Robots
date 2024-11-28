@@ -200,7 +200,19 @@ filtered_data2 = filtered_data1[
 print(filtered_data2)
 
 
+# Filter the rows where the 'Follow up' column has the value 'Ja'
+follow_up_yes = filtered_data2[filtered_data2['Follow up'] == 'Ja']
 
+# Extract the email addresses of those participants
+emails_follow_up = follow_up_yes['Email'].tolist()
+
+# Print the list of emails
+print(emails_follow_up)
+emails_follow_up.to_csv('follow_up_emails.csv', index=False)
+
+# Delete standarized email column for confidential data
+conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
+print(conf_dat.head())
 
 import random
 
@@ -212,9 +224,7 @@ random_ids = random.sample(range(1, num_ids + 1), num_ids)
 filtered_data2["Email"] = random_ids
 print(filtered_data2.head())
 
-# Delete standarized email column for confidential data
-conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
-print(conf_dat.head())
+
 
 
 # List of columns to convert to categorical
@@ -405,18 +415,13 @@ societal_positive = ['AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_
 societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
 
 
-useability = ['Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3', 'Usability/Performanc_4', 'Usability/Performanc_5', 'Usability/Performanc_6', 'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9', 'Usability/Performanc_10']
-enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']
-likeability = ['Likeability_1', 'Likeability_2', 'Likeability_3', 'Likeability_4', 'Likeability_5']
-IQ = ['PercievedIQ_1', 'PercievedIQ_2', 'PercievedIQ_3', 'PercievedIQ_4', 'PercievedIQ_5']
-anthro = ['Anthropomorphism_1', 'Anthropomorphism_2', 'Anthropomorphism_3', 'Anthropomorphism_4', 'Anthropomorphism_5']
 
 # Save to a specific directory
 conf_dat.to_csv('conf.dat.csv', index=False)
 
 
 # Define a mapping from text responses to numeric values (1 to 5)
-likert_to_numeric = {
+likert_5_point = {
     'Heel erg eens': 5,
     'Eens': 4,
     'Neutraal': 3,
@@ -432,7 +437,7 @@ sus_columns = [
     'Usability/Performanc_10'
 ]
 
-conf_dat[sus_columns] = conf_dat[sus_columns].applymap(lambda x: likert_to_numeric[x])
+conf_dat[sus_columns] = conf_dat[sus_columns].applymap(lambda x: likert_5_point[x])
 
 # Apply the SUS scoring rules
 sus_odd_items = ['Usability/Performanc_1', 'Usability/Performanc_3', 'Usability/Performanc_5',
@@ -451,3 +456,48 @@ conf_dat['SUS_Score'] = conf_dat[sus_odd_items + sus_even_items].sum(axis=1) * 2
 
 # Output the final SUS scores
 print(conf_dat[['SUS_Score']])
+
+#average for each pariticipant on enjoyment can be taken - higher scores = higher enjoyment 
+enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']
+likeability = ['Likeability_1', 'Likeability_2', 'Likeability_3', 'Likeability_4', 'Likeability_5']
+IQ = ['PercievedIQ_1', 'PercievedIQ_2', 'PercievedIQ_3', 'PercievedIQ_4', 'PercievedIQ_5']
+anthro = ['Anthropomorphism_1', 'Anthropomorphism_2', 'Anthropomorphism_3', 'Anthropomorphism_4', 'Anthropomorphism_5']
+
+likert_7_point = {
+    "Heel erg oneens": 1,
+    "Oneens": 2,
+    "Enigszins Oneens": 3,
+    "Neutraal": 4,
+    "Engiszins eens": 5,
+    "Eens": 6,
+    "Heel erg eens": 7 }
+
+# Apply the mapping to the relevant columns
+conf_dat[enjoyment] = conf_dat[enjoyment].applymap(lambda x: likert_7_point.get(x, x))
+
+# Check the output to ensure the mapping worked correctly
+print(conf_dat[enjoyment].head())
+
+# Combine all column groups into a single list
+all_columns = enjoyment + likeability + IQ + anthro
+
+# Convert specified columns to numeric (assuming they already have numeric-like data)
+all_columns = enjoyment + likeability + IQ + anthro
+
+# Apply conversion to numeric
+conf_dat[all_columns] = conf_dat[all_columns].apply(pd.to_numeric, errors='coerce')
+
+# Calculate average for enjoyment
+conf_dat['Avg_Enjoyment'] = conf_dat[enjoyment].mean(axis=1)
+
+# Calculate average for likeability
+conf_dat['Avg_Likeability'] = conf_dat[likeability].mean(axis=1)
+
+# Calculate average for IQ
+conf_dat['Avg_IQ'] = conf_dat[IQ].mean(axis=1)
+
+# Calculate average for anthropomorphism
+conf_dat['Avg_Anthropomorphism'] = conf_dat[anthro].mean(axis=1)
+
+
+
