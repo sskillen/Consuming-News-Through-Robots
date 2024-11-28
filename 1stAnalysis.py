@@ -395,7 +395,7 @@ print(list(conf_dat.columns))
 
 
 # Define a mapping from text to numeric values
-likert_propensity = {
+likert_EN_5 = {
     "Strongly disagree": 1,
     "Somewhat disagree": 2,
     "Neither agree nor disagree": 3, 
@@ -409,8 +409,8 @@ tech_propensity = [f'PropsensityTrustTech_{i}' for i in range(1, 7)]
 print(conf_dat['PropensityTrust_1'])
 
 # Apply the mapping to the trust and tech propensity columns
-conf_dat[trust_propensity] = conf_dat[trust_propensity].applymap(lambda x: likert_propensity.get(x, x))
-conf_dat[tech_propensity] = conf_dat[tech_propensity].applymap(lambda x: likert_propensity.get(x, x))
+conf_dat[trust_propensity] = conf_dat[trust_propensity].applymap(lambda x: likert_EN_5.get(x, x))
+conf_dat[tech_propensity] = conf_dat[tech_propensity].applymap(lambda x: likert_EN_5.get(x, x))
 
 # Verify the results
 print(conf_dat[trust_propensity].head())
@@ -530,3 +530,25 @@ conf_dat['Avg_Anthropomorphism'] = conf_dat[anthro].mean(axis=1)
 
 #Print a list of column names to get appropriate variables for correlation matrix
 print(list(conf_dat.columns))
+
+# For categorical variables (e.g., gender, language, political leaning)
+categorical_columns = ['Language', 'Gender', 'devices.used.News', 'News Topics', 'Condition', 'Communication_Style', 'Device_Type']
+
+
+# For numeric variables (e.g., Age, trust scores)
+# Apply conversion to numeric
+
+generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']
+conf_dat[generalNews_trust] = conf_dat[generalNews_trust].applymap(lambda x: likert_EN_5[x])
+conf_dat['Political Leaning'] = conf_dat['Political Leaning'].apply(pd.to_numeric, errors='coerce')
+numeric_columns = ['Political Leaning','Age', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+
+# Set display options to show more rows and columns
+pd.set_option('display.max_rows', None)  # Show all rows
+pd.set_option('display.max_columns', None)  # Show all columns
+pd.set_option('display.width', None)  # Disable line wrapping
+pd.set_option('display.max_colwidth', None)  # Allow full column width display
+
+# Now print the descriptive statistics
+print(conf_dat[categorical_columns].describe())
+print(conf_dat[numeric_columns].describe())
