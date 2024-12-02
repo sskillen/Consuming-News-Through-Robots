@@ -154,7 +154,6 @@ def custom_agg(series):
 
 # Apply aggregation
 filtered_data = merged_data1.groupby('Standardized_Email').agg(custom_agg).reset_index()
-filtered_data.to_csv('afteraggregation.csv') # data still all here at this point
 
 import numpy as np
 
@@ -236,7 +235,7 @@ print(filtered_data2.head())
 # Delete standarized email column for confidential data
 conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
 print(conf_dat.head())
-conf_dat.to_csv("confdat1.csv", index=False)
+
 
 # List of columns to convert to categorical
 columns_to_convert = ['Gender', 'Education', 'Language']
@@ -450,10 +449,6 @@ societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
 
 
 
-# Save to a specific directory
-conf_dat.to_csv('conf.dat.csv', index=False)
-
-
 # Define a mapping from text responses to numeric values (1 to 5)
 likert_5_point = {
     'Heel erg eens': 5,
@@ -612,7 +607,7 @@ numerical_vars = [
 categorical_vars = [
     'Language', 'Gender', 'Education', 'devices.used.News',
     'Gender of Robot', 'Condition', '#_selected', '1st Piece', '2nd Piece', '3rd Piece',
-    'Communication_Style', 'Device_Type', 'Prior Exposure','Novelty_1', 'Novelty_2'
+    'Communication_Style', 'Device_Type', 'prior exposure','Novelty_1', 'Novelty_2'
 ]
 
 # Encode categorical variables using one-hot encoding
@@ -624,15 +619,38 @@ data_combined = pd.concat([conf_dat[numerical_vars], encoded_categorical], axis=
 # Compute correlation matrix (Pearson for numerical variables)
 correlation_matrix = data_combined.corr()
 
-# Display the correlation matrix (rounded for better readability)
-print("Correlation Matrix:")
-print(correlation_matrix.round(2))
 
-# Optional: Plot the correlation matrix using seaborn
-import seaborn as sns
-import matplotlib.pyplot as plt
+# Set correlation threshold (e.g., |0.3| for stronger correlations)
+threshold = 0.3
 
-plt.figure(figsize=(12, 10))
-sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
-plt.title("Correlation Matrix")
+# Filter correlation matrix for absolute values greater than the threshold
+strong_corr = correlation_matrix[(correlation_matrix.abs() >= threshold) & (correlation_matrix != 1)]
+
+# Drop rows and columns where all values are NaN (no strong correlations)
+strong_corr = strong_corr.dropna(how='all').dropna(axis=1, how='all')
+
+# Display the filtered correlation matrix
+print("Strong Correlations (|r| ≥ 0.3):")
+print(strong_corr.round(2))
+
+# Optional: Plot the filtered correlation matrix
+plt.figure(figsize=(10, 8))
+sns.heatmap(strong_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.1)
+plt.title("Strong Correlations (|r| ≥ 0.3)")
 plt.show()
+
+
+
+
+
+
+
+print(list(data_combined.columns))
+data_combined.to_csv('data_combined.csv')
+
+from statsmodels.multivariate.manova import MANOVA
+# Fit MANOVA model
+manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
+
+# Get the results
+print(manova.mv_test())
