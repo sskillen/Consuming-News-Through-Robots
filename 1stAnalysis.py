@@ -187,6 +187,11 @@ print(filtered_data1['EndDate_y'].head())
 filtered_data1['EndDate_x'] = pd.to_datetime(filtered_data1['EndDate_x'])
 filtered_data1['EndDate_y'] = pd.to_datetime(filtered_data1['EndDate_y'])
 
+
+# Count and print the number of participants
+num_emails = len(filtered_data1['Email'])
+print(f"Number of emails: {num_emails}")
+
 # Set cutoff date
 cutoff_date = pd.to_datetime("2024-10-29 00:00:00")
 
@@ -532,16 +537,16 @@ conf_dat['Avg_Anthropomorphism'] = conf_dat[anthro].mean(axis=1)
 print(list(conf_dat.columns))
 
 # For categorical variables (e.g., gender, language, political leaning)
-categorical_columns = ['Language', 'Gender', 'devices.used.News', 'News Topics', 'Condition', 'Communication_Style', 'Device_Type']
-
+categorical_columns = ['Language', 'Education', 'Gender', 'devices.used.News', 'News Topics', 'Condition', 'Communication_Style', 'Device_Type']
+print(conf_dat['News Topics'])
 
 # For numeric variables (e.g., Age, trust scores)
 # Apply conversion to numeric
 
 generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']
 conf_dat[generalNews_trust] = conf_dat[generalNews_trust].applymap(lambda x: likert_EN_5[x])
-conf_dat['Political Leaning'] = conf_dat['Political Leaning'].apply(pd.to_numeric, errors='coerce')
 numeric_columns = ['Political Leaning','Age', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+conf_dat[numeric_columns] = conf_dat[numeric_columns].apply(pd.to_numeric, errors='coerce')
 
 # Set display options to show more rows and columns
 pd.set_option('display.max_rows', None)  # Show all rows
@@ -552,3 +557,82 @@ pd.set_option('display.max_colwidth', None)  # Allow full column width display
 # Now print the descriptive statistics
 print(conf_dat[categorical_columns].describe())
 print(conf_dat[numeric_columns].describe())
+
+#count number participants
+num_emails = len(conf_dat['Email'])
+print(f"Number of emails: {num_emails}")
+
+# List of categorical variables to analyze
+frequency_columns = ['Gender', 'Education', 'Language']
+
+# Function to truncate long labels for better readability
+def truncate_labels(label, max_length=50):
+    if len(label) > max_length:
+        return label[:max_length] + "..."  # Truncate and add ellipsis
+    return label
+
+# Loop through each column and calculate frequency and percentage
+for column in frequency_columns:
+    print(f"\nFrequency Distribution for {column}:")
+    counts = conf_dat[column].value_counts()  # Frequency count
+    percentages = conf_dat[column].value_counts(normalize=True) * 100  # Percentage
+
+    # Truncate labels for display in summary
+    truncated_counts = counts.rename(index=truncate_labels)
+    truncated_percentages = percentages.rename(index=truncate_labels)
+
+    # Print frequency and percentage
+    print(truncated_counts)
+    print("\nPercentage Distribution:")
+    print(truncated_percentages)
+
+    # Create and print a summary table with truncated labels
+    summary = pd.DataFrame({
+        'Frequency': counts,
+        'Percentage': percentages.round(2)  # Rounded to 2 decimal places
+    }).rename(index=truncate_labels)
+
+    print(f"\n{column} Summary Table:")
+    print(summary)
+
+
+
+# Separate numerical and categorical variables
+numerical_vars = [
+    'Age', 'Political Leaning', 'News General Trust_1', 'News General Trust_2',
+    'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4',
+     'trust-judges', 'trust-VVD',
+     'trust-climate',  'trust-student grant',
+     'trust-statistic',
+    'Overall_Device_Trust', 'Overall_Trust_in_Info', 'Overall_credibility', 'average_newspiece',
+    'PropsensityTrustTech_4_Rev', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
+    'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism'
+]
+
+categorical_vars = [
+    'Language', 'Gender', 'Education', 'devices.used.News',
+    'Gender of Robot', 'Condition', '#_selected', '1st Piece', '2nd Piece', '3rd Piece',
+    'Communication_Style', 'Device_Type', 'Prior Exposure','Novelty_1', 'Novelty_2'
+]
+
+# Encode categorical variables using one-hot encoding
+encoded_categorical = pd.get_dummies(conf_dat[categorical_vars], drop_first=True)
+
+# Combine numerical and encoded categorical variables
+data_combined = pd.concat([conf_dat[numerical_vars], encoded_categorical], axis=1)
+
+# Compute correlation matrix (Pearson for numerical variables)
+correlation_matrix = data_combined.corr()
+
+# Display the correlation matrix (rounded for better readability)
+print("Correlation Matrix:")
+print(correlation_matrix.round(2))
+
+# Optional: Plot the correlation matrix using seaborn
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(12, 10))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+plt.title("Correlation Matrix")
+plt.show()
