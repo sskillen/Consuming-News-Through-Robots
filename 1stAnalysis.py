@@ -34,7 +34,7 @@ pre["EndDate"] = pd.to_datetime(pre["EndDate"], errors='coerce')
 
 # Step 3: Drop rows with Na
 pre = pre.dropna(subset=["EndDate"])
-print(pre)
+
 
 
 # List of columns to remove that are irrevelant for data analysis
@@ -99,7 +99,7 @@ print(common_emails)
 
 # Update the rows with the common emails
 pre2.loc[common_emails, columns_to_replace] = corr2.loc[common_emails, columns_to_replace]
-print(pre2)
+
 
 # Merge pre-survey and main survey on the "Email" column
 merged_data = pd.merge(pre2, main3, on="Email", how="outer")
@@ -171,13 +171,13 @@ print(filtered_data1)
 
 # Reset index for cleaner output
 filtered_data1.reset_index(drop=True, inplace=True)
-print(filtered_data1) #data still here
+
 
 #check that only meaningful values are kept
 print(filtered_data1['check_1'].unique())
 
 
-#Following steps are to only keep data that was completed on and after 10/29
+# Following steps are to only keep data that was completed on and after 10/29
 
 print(filtered_data1['EndDate_x'].head())
 print(filtered_data1['EndDate_y'].head())
@@ -596,17 +596,13 @@ for column in frequency_columns:
 numerical_vars = [
     'Age', 'Political Leaning', 'News General Trust_1', 'News General Trust_2',
     'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4',
-     'trust-judges', 'trust-VVD',
-     'trust-climate',  'trust-student grant',
-     'trust-statistic',
-    'Overall_Device_Trust', 'Overall_Trust_in_Info', 'Overall_credibility', 'average_newspiece',
-    'PropsensityTrustTech_4_Rev', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
+    'Overall_Device_Trust', 'Overall_credibility', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
     'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism'
 ]
 
 categorical_vars = [
-    'Language', 'Gender', 'Education', 'devices.used.News',
-    'Gender of Robot', 'Condition', '#_selected', '1st Piece', '2nd Piece', '3rd Piece',
+    'Language', 'Gender', 'devices.used.News',
+    'Gender of Robot', 'Condition',
     'Communication_Style', 'Device_Type', 'prior exposure','Novelty_1', 'Novelty_2'
 ]
 
@@ -615,6 +611,7 @@ encoded_categorical = pd.get_dummies(conf_dat[categorical_vars], drop_first=True
 
 # Combine numerical and encoded categorical variables
 data_combined = pd.concat([conf_dat[numerical_vars], encoded_categorical], axis=1)
+print(data_combined.columns)
 
 # Compute correlation matrix (Pearson for numerical variables)
 correlation_matrix = data_combined.corr()
@@ -629,28 +626,113 @@ strong_corr = correlation_matrix[(correlation_matrix.abs() >= threshold) & (corr
 # Drop rows and columns where all values are NaN (no strong correlations)
 strong_corr = strong_corr.dropna(how='all').dropna(axis=1, how='all')
 
-# Display the filtered correlation matrix
-print("Strong Correlations (|r| ≥ 0.3):")
-print(strong_corr.round(2))
+# +
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Optional: Plot the filtered correlation matrix
-plt.figure(figsize=(10, 8))
-sns.heatmap(strong_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.1)
-plt.title("Strong Correlations (|r| ≥ 0.3)")
-plt.show()
+# Assuming 'strong_corr' is your correlation matrix DataFrame
+
+# Shorten the variable names by renaming columns and rows (if needed)
+short_names = {
+    "devices.used.News_Connected TV (a TV that connects to the internet via set top box, game console, other box such as Apple TV etc.)": "Apple_TV",
+    "devices.used.News_Laptop or desktop computer (at work or home)": "Computer",
+    "Trust in Sources_1": "Trust in NOS",
+    "Trust in Sources_2": "Trust in de Telegraaf",
+    "Trust in Sources_3": "Trust in de Volkskrant",
+    "Trust in Sources_4": "Trust in RTL Nieuws"
+    
+    
+}
+strong_corr = strong_corr.rename(columns=short_names, index=short_names)
+
+# Increase figure size to make space for labels
+plt.figure(figsize=(12, 10))  # Larger figure size
+
+# Masking the upper triangle for symmetry (optional)
+mask = np.triu(np.ones_like(strong_corr, dtype=bool))
+
+# Plotting the heatmap with larger annotation size and rotated axis labels
+sns.heatmap(strong_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.1,
+            mask=mask, annot_kws={"size": 12}, cbar_kws={'shrink': 0.8})
+
+# Adjust axis labels and rotate them for better readability
+plt.xticks(rotation=45, ha='right', fontsize=12)  # Rotate x-axis labels
+plt.yticks(rotation=0, fontsize=12)  # No rotation for y-axis labels
+
+# Increase the font size of the title
+plt.title("Strong Correlations (|r| ≥ 0.3)", fontsize=16)
+
+# Adjust layout to prevent overlap
+plt.tight_layout()
 
 
+# -
 
-
-
+# Create a correlogram (bubble plot)
+plt.figure(figsize=(12, 10))
+sns.scatterplot(x=strong_corr.columns, y=strong_corr.columns, size=strong_corr.abs().stack(), hue=strong_corr.stack(), 
+                sizes=(20, 200), palette='coolwarm', legend=False, marker="o", data=strong_corr)
+plt.title("Correlogram (Bubble Plot)")
 
 
 print(list(data_combined.columns))
-data_combined.to_csv('data_combined.csv')
+
 
 from statsmodels.multivariate.manova import MANOVA
 # Fit MANOVA model
-manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
+manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker * Condition', data=data_combined)
 
 # Get the results
 print(manova.mv_test())
+
+
+# +
+import statsmodels.api as sm
+
+# Prepare the data: Select independent variables (IVs) and dependent variable (DV)
+X = df[['IV1', 'IV2', 'IV3']]  # All independent variables
+y = df['DV1']  # Dependent variable
+
+# Add a constant (intercept)
+X = sm.add_constant(X)
+
+# Start with an empty model (just the intercept)
+X_current = X[['const']]  # Start with just the intercept
+
+# Initialize the best model
+best_model = None
+best_p_value = float('inf')
+
+# Set a threshold for p-values to decide which variables to add (e.g., 0.05)
+p_value_threshold = 0.05
+
+# Forward selection: Try adding each IV one by one
+remaining_vars = list(X.columns[1:])  # Exclude 'const' for initial loop
+
+while remaining_vars:
+    p_values = []  # List to store p-values for the current step
+    for var in remaining_vars:
+        X_temp = X_current.copy()
+        X_temp[var] = X[var]  # Add variable to the model
+        
+        # Fit the model
+        model = sm.OLS(y, X_temp).fit()
+        
+        # Store the p-value of the variable added to the model
+        p_values.append((var, model.pvalues[var]))
+    
+    # Sort p-values to find the variable with the smallest p-value
+    p_values.sort(key=lambda x: x[1])  # Sort by p-value (ascending)
+    
+    # Add the variable with the smallest p-value if it's below the threshold
+    if p_values[0][1] < p_value_threshold:
+        best_model = sm.OLS(y, X_current.assign(**{p_values[0][0]: X[p_values[0][0]]})).fit()
+        X_current[p_values[0][0]] = X[p_values[0][0]]  # Add variable to model
+        remaining_vars.remove(p_values[0][0])  # Remove added variable from remaining vars
+    else:
+        break  # Stop if no variables meet the p-value threshold
+
+# Print the best model's summary
+print(best_model.summary())
+
