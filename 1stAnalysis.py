@@ -669,70 +669,126 @@ plt.tight_layout()
 
 # -
 
-# Create a correlogram (bubble plot)
-plt.figure(figsize=(12, 10))
-sns.scatterplot(x=strong_corr.columns, y=strong_corr.columns, size=strong_corr.abs().stack(), hue=strong_corr.stack(), 
-                sizes=(20, 200), palette='coolwarm', legend=False, marker="o", data=strong_corr)
-plt.title("Correlogram (Bubble Plot)")
-
-
 print(list(data_combined.columns))
 
 
 from statsmodels.multivariate.manova import MANOVA
 # Fit MANOVA model
-manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker * Condition', data=data_combined)
+manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
 
 # Get the results
 print(manova.mv_test())
 
 
 # +
+# Count occurrences of each unique response in 'News_Frequency'
+response_counts = conf_dat[['News Habits', 'News Interests']].value_counts()
+
+# Display the response counts
+print(response_counts)
+
+
+# +
 import statsmodels.api as sm
 
-# Prepare the data: Select independent variables (IVs) and dependent variable (DV)
-X = df[['IV1', 'IV2', 'IV3']]  # All independent variables
-y = df['DV1']  # Dependent variable
+# List of dependent variables (DVs)
+dependent_vars = [ 'Overall_credibility', 'Overall_Device_Trust']
 
-# Add a constant (intercept)
-X = sm.add_constant(X)
+# List of independent variables (IVs)
+independent_vars = ['Language', 'Gender', 'Age', 'Education', 'News Habits', 'News Interests', 'devices.used.News', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', 'Novelty_1', 'Novelty_2', 'Gender of Robot','Condition', '#_selected', '1st Piece', '2nd Piece', '3rd Piece', 'Communication_Style', 'Device_Type', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
 
-# Start with an empty model (just the intercept)
-X_current = X[['const']]  # Start with just the intercept
 
-# Initialize the best model
-best_model = None
-best_p_value = float('inf')
+# Define mappings for different columns
+mappings = {
+    'News Habits': {
+        "Never": 1,
+        "Less often than once a month": 2,
+        "Less often than once a week": 3,
+        "Once a week": 4,
+        "2-3 days a week": 5,
+        "4-6 days a week": 6,
+        "Once a day": 7,
+        "Between 2 and 5 times a day": 8,
+        "Between 6 and 10 times a day": 9,
+        "More than 10 times a day": 10,
+    },
+    'News Interests': {
+        "Not at all interested": 1,
+        "Not very interested": 2,
+        "Somewhat interested": 3,
+        "Very interested": 4,
+        "Extremely interested": 5,
+    },
+    # Add more mappings for other columns as needed
+}
 
-# Set a threshold for p-values to decide which variables to add (e.g., 0.05)
+# Loop through each column and apply the appropriate mapping
+for col, mapping in mappings.items():
+    new_col_name = f"{col}_Numeric"  # Create a new column name with '_Numeric'
+    conf_dat[new_col_name] = conf_dat[col].map(mapping)  # Apply the specific mapping
+
+# Check the results
+print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
+
+
+# +
+# Threshold for p-value to include variables in the model
 p_value_threshold = 0.05
 
-# Forward selection: Try adding each IV one by one
-remaining_vars = list(X.columns[1:])  # Exclude 'const' for initial loop
+# Convert categorical variables to dummy variables
+df_encoded = pd.get_dummies(conf_dat, columns=[
+    'Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Device_Type',
+    '1st Piece', '2nd Piece', '3rd Piece'
+], drop_first=True)
 
-while remaining_vars:
-    p_values = []  # List to store p-values for the current step
-    for var in remaining_vars:
-        X_temp = X_current.copy()
-        X_temp[var] = X[var]  # Add variable to the model
-        
-        # Fit the model
-        model = sm.OLS(y, X_temp).fit()
-        
-        # Store the p-value of the variable added to the model
-        p_values.append((var, model.pvalues[var]))
+# Update independent variables list after encoding
+independent_vars = data_combined.columns.difference(dependent_vars).tolist()
+# -
+
+# Loop through each dependent variable and apply forward selection
+for dv in dependent_vars:
+    print(f"\nForward Selection for Dependent Variable: {dv}")
     
-    # Sort p-values to find the variable with the smallest p-value
-    p_values.sort(key=lambda x: x[1])  # Sort by p-value (ascending)
+    y = df[dv]  # Current dependent variable
+    X = df[independent_vars]  # All independent variables
+    X = sm.add_constant(X)  # Add intercept
     
-    # Add the variable with the smallest p-value if it's below the threshold
-    if p_values[0][1] < p_value_threshold:
-        best_model = sm.OLS(y, X_current.assign(**{p_values[0][0]: X[p_values[0][0]]})).fit()
-        X_current[p_values[0][0]] = X[p_values[0][0]]  # Add variable to model
-        remaining_vars.remove(p_values[0][0])  # Remove added variable from remaining vars
+    # Start with an empty model (just the intercept)
+    X_current = X[['const']]
+    
+    # Initialize the best model
+    best_model = None
+    
+    # Remaining variables to consider
+    remaining_vars = list(X.columns[1:])  # Exclude 'const'
+    
+    # Forward selection process
+    while remaining_vars:
+        p_values = []  # Store p-values for this step
+        for var in remaining_vars:
+            X_temp = X_current.copy()
+            X_temp[var] = X[var]  # Add variable to the model
+            
+            # Fit the model
+            model = sm.OLS(y, X_temp).fit()
+            
+            # Store the p-value of the added variable
+            p_values.append((var, model.pvalues[var]))
+        
+        # Sort variables by p-value (ascending)
+        p_values.sort(key=lambda x: x[1])
+        
+        # Add the variable with the lowest p-value if it's below the threshold
+        if p_values[0][1] < p_value_threshold:
+            selected_var = p_values[0][0]
+            best_model = sm.OLS(y, X_current.assign(**{selected_var: X[selected_var]})).fit()
+            X_current[selected_var] = X[selected_var]  # Add variable to the model
+            remaining_vars.remove(selected_var)  # Remove selected variable
+        else:
+            break  # Stop if no variable meets the threshold
+    
+    # Print the summary of the best model for the current dependent variable
+    if best_model:
+        print(best_model.summary())
     else:
-        break  # Stop if no variables meet the p-value threshold
-
-# Print the best model's summary
-print(best_model.summary())
-
+        print("No variables met the p-value threshold.")
