@@ -695,7 +695,7 @@ import statsmodels.api as sm
 dependent_vars = [ 'Overall_credibility', 'Overall_Device_Trust']
 
 # List of independent variables (IVs)
-independent_vars = ['Language', 'Gender', 'Age', 'Education', 'News Habits', 'News Interests', 'devices.used.News', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', 'Novelty_1', 'Novelty_2', 'Gender of Robot','Condition', '#_selected', '1st Piece', '2nd Piece', '3rd Piece', 'Communication_Style', 'Device_Type', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
 
 
 # Define mappings for different columns
@@ -729,6 +729,7 @@ for col, mapping in mappings.items():
 
 # Check the results
 print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
+print(conf_dat.columns)
 
 
 # +
@@ -738,19 +739,45 @@ p_value_threshold = 0.05
 # Convert categorical variables to dummy variables
 df_encoded = pd.get_dummies(conf_dat, columns=[
     'Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Device_Type',
-    '1st Piece', '2nd Piece', '3rd Piece'
+    '1st Piece', '2nd Piece', '3rd Piece', 'Novelty_1', 'Novelty_2','devices.used.News'
 ], drop_first=True)
 
-# Update independent variables list after encoding
-independent_vars = data_combined.columns.difference(dependent_vars).tolist()
+# List of columns to be dummy coded
+columns_to_dummy = ['Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 
+                    'Device_Type', '1st Piece', '2nd Piece', '3rd Piece','devices.used.News', 'Novelty']
+# Filter only the dummy coded columns
+dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) for c in columns_to_dummy)]
+
+# Combine the original independent variables with the dummy-coded variables
+combined_independent_vars = independent_vars + dummy_coded_vars
+
+print("Combined Independent Variables:")
+print(combined_independent_vars)
+
+
+# +
+#correct non-numeric data types in columns
+
+df_encoded[combined_independent_vars] = df_encoded[combined_independent_vars].astype('int64', errors='ignore')
+
+print("\nUpdated Data Types of Independent Variables:")
+print(df_encoded[combined_independent_vars].dtypes)
+
+non_numeric_cols = df_encoded[combined_independent_vars].select_dtypes(include=['object', 'category']).columns
+if len(non_numeric_cols) > 0:
+    print("\nNon-Numeric Independent Variables:")
+    print(non_numeric_cols)
+else:
+    print("\nAll Independent Variables are Numeric.")
+
 # -
 
 # Loop through each dependent variable and apply forward selection
 for dv in dependent_vars:
     print(f"\nForward Selection for Dependent Variable: {dv}")
     
-    y = df[dv]  # Current dependent variable
-    X = df[independent_vars]  # All independent variables
+    y = df_encoded[dv]  # Current dependent variable
+    X = df_encoded[independent_vars]  # All independent variables
     X = sm.add_constant(X)  # Add intercept
     
     # Start with an empty model (just the intercept)
@@ -792,3 +819,10 @@ for dv in dependent_vars:
         print(best_model.summary())
     else:
         print("No variables met the p-value threshold.")
+
+# Check for NaN values in the entire DataFrame after dummy encoding
+print("Missing Values in Encoded DataFrame:")
+print(df_encoded.isnull().sum())
+
+
+
