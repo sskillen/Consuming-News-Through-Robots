@@ -288,25 +288,181 @@ condition_counts = conf_dat['Condition'].value_counts()
 # Print the number of participants in each condition
 print(condition_counts)
 
-# Map labels to numeric values
-label_to_value = {
+# +
+# Step 1: Define all mappings
+mappings = {
+    'News Habits': {
+        "Never": 1,
+        "Less often than once a month": 2,
+        "Less often than once a week": 3,
+        "Once a week": 4,
+        "2-3 days a week": 5,
+        "4-6 days a week": 6,
+        "Once a day": 7,
+        "Between 2 and 5 times a day": 8,
+        "Between 6 and 10 times a day": 9,
+        "More than 10 times a day": 10,
+    },
+    'News Interests': {
+        "Not at all interested": 1,
+        "Not very interested": 2,
+        "Somewhat interested": 3,
+        "Very interested": 4,
+        "Extremely interested": 5,
+    },
+    # Add more mappings for other columns if necessary
+}
+
+label_to_value1 = {
+    "Beschrijft het erg slecht": 1,
+    "Beschrijft het slecht": 2,
+    "Beschrijft het enigszins slecht": 3,
+    "Neutraal": 4,
+    "Beschrijft het enigszins goed": 5,
+    "Beschrijft het goed": 6,
+    "Beschrijft het erg goed": 7,
+}
+
+device_trust_scale = {
     "Heel erg oneens": 1,
     "Oneens": 2,
     "Neutraal": 3,
     "Eens": 4,
     "Heel erg eens": 5,
 }
-# Map Likert labels to numeric values for all trust columns
-trust_columns = [f'device_trust_{i}' for i in range(1, 13)]
-conf_dat[trust_columns] = conf_dat[trust_columns].applymap(lambda x: label_to_value[x])
+newspiece_scale = {
+    "Heel weinig vertrouwen": 1,
+    "Weinig vertrouwen": 2,
+    "Neutraal": 3,
+    "Vertrouwen": 4,
+    "Veel vertrouwen": 5,
+}
 
+likert_EN_5 = {
+    "Strongly disagree": 1,
+    "Somewhat disagree": 2,
+    "Neither agree nor disagree": 3, 
+    "Somewhat agree": 4,
+    "Strongly agree": 5
+}
+
+likert_5_point = {
+    'Heel erg eens': 5,
+    'Eens': 4,
+    'Neutraal': 3,
+    'Oneens': 2,
+    'Heel erg oneens': 1
+}
+
+likert_7_point = {
+    "Heel erg oneens": 1,
+    "Oneens": 2,
+    "Enigszins Oneens": 3,
+    "Neutraal": 4,
+    "Engiszins eens": 5,
+    "Eens": 6,
+    "Heel erg eens": 7
+}
+
+likert_robot = {
+    "Completely disagree": 1,
+    "Mostly disagree": 2,
+    "Slightly disagree": 3,
+    "Neither agree nor disagree": 4,
+    "Slightly agree": 5,
+    "Mostly agree": 6,
+    "Completely agree": 7
+}
+
+
+# Step 2: Create a function to apply mappings
+def apply_mapping(df, column, mapping):
+    """Applies a given mapping to a column in the dataframe."""
+    new_col_name = f"{column}_Numeric"  # Create a new column name with '_Numeric'
+    df[new_col_name] = df[column].map(mapping)  # Apply the mapping
+    return df
+
+# Step 3: Apply the mappings to relevant columns
+def preprocess_data(df):
+    # Apply mappings for specified columns
+    for col, mapping in mappings.items():
+        df = apply_mapping(df, col, mapping)
+
+    # Apply Likert scale transformations for trust columns
+    trust_columns = [f'Trust in Information_{i}' for i in range(1, 4)]
+    df[trust_columns] = df[trust_columns].applymap(lambda x: label_to_value1.get(x, x))
+
+    # Apply trust piece mappings
+    newspiece_trust = ['trust-VVD', 'trust-student grant', 'trust-statistic', 'trust-climate', 'trust-judges']
+    df[newspiece_trust] = df[newspiece_trust].applymap(lambda x: newspiece_scale.get(x, None))
+
+    # Apply Likert scale mappings for various columns
+    trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
+    tech_propensity = [f'PropsensityTrustTech_{i}' for i in range(1, 7)]
+    df[trust_propensity] = df[trust_propensity].applymap(lambda x: likert_EN_5.get(x, x))
+    df[tech_propensity] = df[tech_propensity].applymap(lambda x: likert_EN_5.get(x, x))
+
+    # Apply 5-point Likert scale for usability/performance columns
+    sus_columns = [
+        'Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3',
+        'Usability/Performanc_4', 'Usability/Performanc_5', 'Usability/Performanc_6',
+        'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9',
+        'Usability/Performanc_10'
+    ]
+    df[sus_columns] = df[sus_columns].applymap(lambda x: likert_5_point.get(x, x))
+
+    # Apply 7-point Likert scale for enjoyment columns
+    enjoyment_columns = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']  # Example column names
+    df[enjoyment_columns] = df[enjoyment_columns].applymap(lambda x: likert_7_point.get(x, x))
+
+    # Apply general news trust transformation
+    generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']  # Replace with actual columns
+    df[generalNews_trust] = df[generalNews_trust].applymap(lambda x: likert_EN_5[x] if x in likert_EN_5 else x)
+
+    # Map Likert labels to numeric values for all trust columns
+    device_trust_columns = [f'device_trust_{i}' for i in range(1, 13)]
+    df[device_trust_columns] = df[device_trust_columns].applymap(lambda x: device_trust_scale.get(x, x))
+
+    personal_positive = ['AttitudeRobots1_1', 'AttitudeRobots1_2', 'AttitudeRobots1_3', 'AttitudeRobots1_4', 'AttitudeRobots1_5']
+    personal_negative = ['AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_8', 'AttitudeRobots2_1', 'AttitudeRobots2_2']
+    societal_positive = ['AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7']
+    societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
+    all_robot_scales = personal_positive + personal_negative + societal_positive + societal_negative
+    df[all_robot_scales] = df[all_robot_scales].applymap(lambda x: likert_robot.get(x, x))
+    return df
+
+# Step 4: Apply the preprocessing function to the dataframe
+conf_dat = preprocess_data(conf_dat)
+
+# Check the updated dataframe
+print(conf_dat)
+
+
+# +
 # Reverse code items 1, 2, and 3 (using the Likert scale, reverse the values)
-reverse_scale = 5
+# List of columns to reverse
 reverse_columns = ['device_trust_1', 'device_trust_2', 'device_trust_3']
+
+# Convert columns to numeric, replacing non-numeric values with NaN
+conf_dat[reverse_columns] = conf_dat[reverse_columns].apply(pd.to_numeric, errors='coerce')
+
+# Check if there are any NaN values after conversion
+if conf_dat[reverse_columns].isnull().any().any():
+    print("Warning: NaN values found after conversion. Handling missing values...")
+
+# Handle NaN values (e.g., fill with the median or drop them)
+conf_dat[reverse_columns] = conf_dat[reverse_columns].fillna(conf_dat[reverse_columns].median())
+
+# Perform the reverse scoring
+reverse_scale = 5
 conf_dat[reverse_columns] = reverse_scale + 1 - conf_dat[reverse_columns]
 
+print(conf_dat[reverse_columns])
+# -
+
 # Calculate the overall trust score (average of all 12 items)
-conf_dat['Overall_Device_Trust'] = conf_dat[trust_columns].mean(axis=1)
+device_trust_columns = [f'device_trust_{i}' for i in range(1, 13)]
+conf_dat['Overall_Device_Trust'] = conf_dat[device_trust_columns].mean(axis=1)
 
 print(conf_dat['Overall_Device_Trust'])
 
@@ -331,25 +487,10 @@ import matplotlib.pyplot as plt
 sns.boxplot(x='Device_Type', y='Overall_Device_Trust', data=conf_dat)
 sns.boxplot(x='Communication_Style', y='Overall_Device_Trust', data=conf_dat)
 sns.boxplot(x='Condition', y='Overall_Device_Trust', data=conf_dat)
-# Show the plot
-plt.show()
-
-# Map labels to numeric values
-label_to_value1 = {
-    "Beschrijft het erg slecht": 1,
-    "Beschrijft het slecht": 2,
-    "Beschrijft het enigszins slecht": 3,
-    "Neutraal": 4,
-    "Beschrijft het enigszins goed": 5,
-    "Beschrijft het goed": 6,
-    "Beschrijft het erg goed": 7,
-}
-# Map Likert labels to numeric values for all trust columns
-trustinfo_columns = [f'Trust in Information_{i}' for i in range(1, 4)]
-conf_dat[trustinfo_columns] = conf_dat[trustinfo_columns].applymap(lambda x: label_to_value1[x])
 
 
 # Calculate the overall trust in information by averaging the three columns
+trustinfo_columns = [f'Trust in Information_{i}' for i in range(1, 4)]
 conf_dat['Overall_Trust_in_Info'] = conf_dat[trustinfo_columns].mean(axis=1)
 
 # Check the new column
@@ -365,61 +506,15 @@ conf_dat[reverse_columns1] = reverse_scale + 1 - conf_dat[reverse_columns1]
 
 
 # Calculate the overall credibility by averaging the three columns
-conf_dat['Overall_credibility'] = conf_dat[reverse_columns1].mean(axis=1)
+conf_dat['Overall_Trust_News'] = conf_dat[reverse_columns1].mean(axis=1)
 
 # Check the new column
-print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_credibility']].head())
-
-newspiece_scale = {
-    "Heel weinig vertrouwen": 1,
-    "Weinig vertrouwen": 2,
-    "Neutraal": 3,
-    "Vertrouwen": 4,
-    "Veel vertrouwen": 5,
-}
-
-# Map Likert labels to numeric values for all trust columns
-newspiece_trust = ['trust-VVD', 'trust-student grant', 'trust-statistic', 'trust-climate', 'trust-judges']
-
-# Map Likert scale labels to numeric values
-conf_dat[newspiece_trust] = conf_dat[newspiece_trust].applymap(lambda x: newspiece_scale.get(x, None))
-
-
-# Calculate average trust score for news items, ignoring NaN values
-conf_dat['average_newspiece'] = conf_dat[newspiece_trust].mean(axis=1, skipna=True)
-
-print(conf_dat['average_newspiece'])
+print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_Trust_News']].head())
 
 print(conf_dat.columns)
-print(conf_dat[['average_newspiece', 'Overall_credibility', 'Overall_Trust_in_Info']].head())
 
 # Print all column names as a list
 print(list(conf_dat.columns))
-
-
-
-# Define a mapping from text to numeric values
-likert_EN_5 = {
-    "Strongly disagree": 1,
-    "Somewhat disagree": 2,
-    "Neither agree nor disagree": 3, 
-    "Somewhat agree": 4,
-    "Strongly agree": 5
-}
-
-# List of columns for trust propensity and tech propensity
-trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
-tech_propensity = [f'PropsensityTrustTech_{i}' for i in range(1, 7)]
-print(conf_dat['PropensityTrust_1'])
-
-# Apply the mapping to the trust and tech propensity columns
-conf_dat[trust_propensity] = conf_dat[trust_propensity].applymap(lambda x: likert_EN_5.get(x, x))
-conf_dat[tech_propensity] = conf_dat[tech_propensity].applymap(lambda x: likert_EN_5.get(x, x))
-
-# Verify the results
-print(conf_dat[trust_propensity].head())
-print(conf_dat[tech_propensity].head())
-
 
 # Reverse code the numeric values
 conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
@@ -428,6 +523,8 @@ conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
 print(conf_dat[['PropsensityTrustTech_4', 'PropsensityTrustTech_4_Rev']].head())
 propensity_tech = ['PropsensityTrustTech_1', 'PropsensityTrustTech_2', 'PropsensityTrustTech_3', 'PropsensityTrustTech_4_Rev', 'PropsensityTrustTech_5', 'PropsensityTrustTech_6']
 
+trust_propensity = ['PropensityTrust_1', 'PropensityTrust_2', 'PropensityTrust_3', 'PropensityTrust_4']
+tech_propensity = [f'PropsensityTrustTech_{i}' for i in range(1, 7)]
 propensity_columns = trust_propensity + propensity_tech
 
 # Apply conversion to numeric
@@ -447,16 +544,25 @@ personal_negative = ['AttitudeRobots1_6', 'AttitudeRobots1_7', 'AttitudeRobots1_
 societal_positive = ['AttitudeRobots2_3', 'AttitudeRobots2_4', 'AttitudeRobots2_5', 'AttitudeRobots2_6', 'AttitudeRobots2_7']
 societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
 
+# +
+# Calculate the mean of personal_positive, personal_negative, societal_positive, and societal_negative
+personal_positive_mean = conf_dat[personal_positive].mean(axis=1)
+personal_negative_mean = conf_dat[personal_negative].mean(axis=1)
+societal_positive_mean = conf_dat[societal_positive].mean(axis=1)
+societal_negative_mean = conf_dat[societal_negative].mean(axis=1)
 
+# Combine all new columns at once using pd.concat
+new_columns = pd.DataFrame({
+    'personal_positive': personal_positive_mean,
+    'personal_negative': personal_negative_mean,
+    'societal_positive': societal_positive_mean,
+    'societal_negative': societal_negative_mean
+})
 
-# Define a mapping from text responses to numeric values (1 to 5)
-likert_5_point = {
-    'Heel erg eens': 5,
-    'Eens': 4,
-    'Neutraal': 3,
-    'Oneens': 2,
-    'Heel erg oneens': 1
-}
+# Concatenate the new columns with the original DataFrame
+conf_dat = pd.concat([conf_dat, new_columns], axis=1)
+
+# -
 
 # Apply the mapping to all relevant columns
 sus_columns = [
@@ -465,8 +571,6 @@ sus_columns = [
     'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9',
     'Usability/Performanc_10'
 ]
-
-conf_dat[sus_columns] = conf_dat[sus_columns].applymap(lambda x: likert_5_point[x])
 
 # Apply the SUS scoring rules
 sus_odd_items = ['Usability/Performanc_1', 'Usability/Performanc_3', 'Usability/Performanc_5',
@@ -491,18 +595,6 @@ enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoym
 likeability = ['Likeability_1', 'Likeability_2', 'Likeability_3', 'Likeability_4', 'Likeability_5']
 IQ = ['PercievedIQ_1', 'PercievedIQ_2', 'PercievedIQ_3', 'PercievedIQ_4', 'PercievedIQ_5']
 anthro = ['Anthropomorphism_1', 'Anthropomorphism_2', 'Anthropomorphism_3', 'Anthropomorphism_4', 'Anthropomorphism_5']
-
-likert_7_point = {
-    "Heel erg oneens": 1,
-    "Oneens": 2,
-    "Enigszins Oneens": 3,
-    "Neutraal": 4,
-    "Engiszins eens": 5,
-    "Eens": 6,
-    "Heel erg eens": 7 }
-
-# Apply the mapping to the relevant columns
-conf_dat[enjoyment] = conf_dat[enjoyment].applymap(lambda x: likert_7_point.get(x, x))
 
 # Check the output to ensure the mapping worked correctly
 print(conf_dat[enjoyment].head())
@@ -596,7 +688,7 @@ for column in frequency_columns:
 numerical_vars = [
     'Age', 'Political Leaning', 'News General Trust_1', 'News General Trust_2',
     'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4',
-    'Overall_Device_Trust', 'Overall_credibility', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
+    'Overall_Device_Trust', 'Overall_Trust_News', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
     'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism'
 ]
 
@@ -674,7 +766,7 @@ print(list(data_combined.columns))
 
 from statsmodels.multivariate.manova import MANOVA
 # Fit MANOVA model
-manova = MANOVA.from_formula('Overall_credibility + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
+manova = MANOVA.from_formula('Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
 
 # Get the results
 print(manova.mv_test())
@@ -692,7 +784,7 @@ print(response_counts)
 import statsmodels.api as sm
 
 # List of dependent variables (DVs)
-dependent_vars = [ 'Overall_credibility', 'Overall_Device_Trust']
+dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
 
 # List of independent variables (IVs)
 independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
