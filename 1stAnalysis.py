@@ -246,16 +246,16 @@ print(conf_dat.head()) #all data is here at this point
 # Define mapping logic
 def extract_communication_style(condition):
     if 'transactional' in condition:
-        return 'Transactional'
+        return 'transactional'
     elif 'social' in condition:
-        return 'Social'
+        return 'social'
     return None
 
 def extract_device_type(condition):
-    if 'Robot' in condition:
-        return 'Robot'
-    elif 'Speaker' in condition:
-        return 'Speaker'
+    if 'robot' in condition:
+        return 'robot'
+    elif 'speaker' in condition:
+        return 'speaker'
     return None
 
 # Apply mappings
@@ -343,7 +343,6 @@ likert_7_pointNL = {
     "engiszins eens": 5,
     "eens": 6,
     "heel erg eens": 7
-
 }
 
 # +
@@ -423,27 +422,11 @@ def preprocess_data(df):
     df[['AttitudeTechGeneral_1']] = df[['AttitudeTechGeneral_1']].applymap(lambda x: likert_EN_5.get(x, x))
     return df
 
-# +
 # Step 4: Apply the preprocessing function to the dataframe
 conf_dat = preprocess_data(conf_dat)
 
-
-def map_topics(topics):
-    topics_list = topics.split(", ")  # Split by commas to handle multiple topics
-    short_topics = [news_topics_short.get(topic.strip(), topic) for topic in topics_list]  # Map and strip any extra spaces
-    return ", ".join(short_topics)  # Join the mapped topics back into a single string
-
-# Apply the function to the 'News Topics' column
-conf_dat['News Topics Short'] = conf_dat['News Topics'].apply(map_topics)
-
-
-# Print the resulting dataframe
-print(conf_dat.head())
-print(conf_dat['News Topic Shorthand'])
-# -
-
 # Check the updated dataframe
-print(conf_dat.head(10))
+print(conf_dat.head(4))
 
 
 # +
@@ -731,53 +714,41 @@ strong_corr = correlation_matrix[(correlation_matrix.abs() >= threshold) & (corr
 # Drop rows and columns where all values are NaN (no strong correlations)
 strong_corr = strong_corr.dropna(how='all').dropna(axis=1, how='all')
 
-# +
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Assuming 'strong_corr' is your correlation matrix DataFrame
-
-# Shorten the variable names by renaming columns and rows (if needed)
+# Shorten variable names
 short_names = {
-    "devices.used.News_Connected TV (a TV that connects to the internet via set top box, game console, other box such as Apple TV etc.)": "Apple_TV",
+    "devices.used.News_Connected TV (a TV that connects to the internet via set top box, game console, other box such as Apple TV etc.)": "TV_Connected",
     "devices.used.News_Laptop or desktop computer (at work or home)": "Computer",
-    "Trust in Sources_1": "Trust in NOS",
-    "Trust in Sources_2": "Trust in de Telegraaf",
-    "Trust in Sources_3": "Trust in de Volkskrant",
-    "Trust in Sources_4": "Trust in RTL Nieuws"
-    
-    
+    "Trust in Sources_1": "Trust_NOS",
+    "Trust in Sources_2": "Trust_Telegraaf",
+    "Trust in Sources_3": "Trust_Volkskrant",
+    "Trust in Sources_4": "Trust_RTL"
 }
-strong_corr = strong_corr.rename(columns=short_names, index=short_names)
 
-# Increase figure size to make space for labels
-plt.figure(figsize=(12, 10))  # Larger figure size
+strong_corr = strong_corr.rename(columns=short_names, index=short_names)
 
 # Masking the upper triangle for symmetry (optional)
 mask = np.triu(np.ones_like(strong_corr, dtype=bool))
+# Plot the heatmap with better dimensions and layout
+plt.figure(figsize=(18, 12))
+sns.heatmap(
+    strong_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5,
+    mask=mask, annot_kws={"size": 12}, cbar_kws={'shrink': 0.75}
+)
 
-# Plotting the heatmap with larger annotation size and rotated axis labels
-sns.heatmap(strong_corr, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.1,
-            mask=mask, annot_kws={"size": 12}, cbar_kws={'shrink': 0.8})
+# Adjust labels for readability
+plt.xticks(rotation=45, ha='right', fontsize=10)
+plt.yticks(rotation=0, fontsize=10)
 
-# Adjust axis labels and rotate them for better readability
-plt.xticks(rotation=45, ha='right', fontsize=12)  # Rotate x-axis labels
-plt.yticks(rotation=0, fontsize=12)  # No rotation for y-axis labels
+plt.title("Strong Correlations (|r| ≥ 0.3)", fontsize=18)
 
-# Increase the font size of the title
-plt.title("Strong Correlations (|r| ≥ 0.3)", fontsize=16)
-
-# Adjust layout to prevent overlap
+# Prevent overlap of plot elements
 plt.tight_layout()
-
-
-# -
-
-print(list(data_combined.columns))
-
-
-# +
+plt.subplots_adjust(bottom=0.2, left=0.2)
+plt.show()
 
 
 # List of dependent variables (DVs)
@@ -790,13 +761,17 @@ independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Pol
 
 # Check the results
 print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
-print(conf_dat.columns)
-# -
+
+
+# Display all columns in a list
+column_list = list(data_combined.columns)
+print(column_list)
+
 
 
 from statsmodels.multivariate.manova import MANOVA
 # Fit MANOVA model
-manova = MANOVA.from_formula('Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
+manova = MANOVA.from_formula('Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker', data=data_combined)
 
 # Get the results
 print(manova.mv_test())
