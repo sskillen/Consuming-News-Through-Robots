@@ -23,7 +23,7 @@ print("Survey 2 Columns:", pre.columns)
 print("Survey 3 Columns:", corr.columns)
 print("Excel Data Columns:", excel_data.columns)
 
-print(pre["EndDate"].head(50))  # print EndDate to better understand structure of dates. Later, dates will be used to filter out unusable data
+print(pre["EndDate"].head(4))  # print EndDate to better understand structure of dates. Later, dates will be used to filter out unusable data
 
 # Step 1: Remove non-datetime rows based on a keyword
 pre = pre[~pre["EndDate"].str.contains("ImportId", na=False)]
@@ -34,8 +34,6 @@ pre["EndDate"] = pd.to_datetime(pre["EndDate"], errors='coerce')
 
 # Step 3: Drop rows with Na
 pre = pre.dropna(subset=["EndDate"])
-
-
 
 # List of columns to remove that are irrevelant for data analysis
 columns_to_remove = [
@@ -103,11 +101,11 @@ pre2.loc[common_emails, columns_to_replace] = corr2.loc[common_emails, columns_t
 
 # Merge pre-survey and main survey on the "Email" column
 merged_data = pd.merge(pre2, main3, on="Email", how="outer")
-print(merged_data)
+print(merged_data.head())
 
 # Merge the result with excel data on the "Email" column
 merged_data1 = pd.merge(merged_data, excel_data, on="Email", how="outer")
-print(merged_data1)
+print(merged_data1.head())
 
 # the following steps are to match different emails that a single participant used/misspelled across the various surveys
 from fuzzywuzzy import fuzz, process
@@ -137,7 +135,7 @@ for email in emails:
 # Step 3: Add a new column for standardized emails
 merged_data1['Standardized_Email'] = merged_data1['Email'].replace(email_mapping)
 
-print(merged_data1)
+print(merged_data1.head())
 
 
 # Following steps are to consolidate all data from one participant based off their standarized emails into one row
@@ -163,11 +161,11 @@ filtered_data['check_1'] = filtered_data['check_1'].replace(
     np.nan,
     regex=True
 )
-print(filtered_data) #data still here
+print(filtered_data.head()) #data still here
 
 # Drop rows where 'check_1' is NaN (these are people who never completed the full experiment)
 filtered_data1 = filtered_data.dropna(subset=['check_1'])
-print(filtered_data1)
+print(filtered_data1.head())
 
 # Reset index for cleaner output
 filtered_data1.reset_index(drop=True, inplace=True)
@@ -201,7 +199,7 @@ filtered_data2 = filtered_data1[
 ]
 
 # Print filtered data
-print(filtered_data2)
+print(filtered_data2.head())
 
 
 # Filter the rows where the 'Follow up' column has the value 'Ja'
@@ -236,30 +234,14 @@ print(filtered_data2.head())
 conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
 print(conf_dat.head())
 
+# Loop through all columns and apply str.strip() and str.lower() if the column has string data
+for col in conf_dat:
+    if conf_dat[col].dtype == 'object':  # Check if the column is a string/object type
+        conf_dat[col] = conf_dat[col].str.strip().str.lower()
 
-# List of columns to convert to categorical
-columns_to_convert = ['Gender', 'Education', 'Language']
+print(conf_dat.head()) #all data is here at this point
 
-# Convert each column to categorical
-for column in columns_to_convert:
-    conf_dat[column] = conf_dat[column].astype('category')
 
-# Check the data types to confirm the conversion
-print(conf_dat.dtypes)
-
-# Display a summary of the converted columns
-print(conf_dat[columns_to_convert].describe())
-
-# Education summary
-print(conf_dat['Education'].describe())
-
-# Gender distribution
-print(conf_dat['Gender'].value_counts(normalize=True) * 100)
-
-# Education distribution
-print(conf_dat['Education'].value_counts(normalize=True) * 100)
-
-print(conf_dat['Language'].value_counts(normalize=True) * 100)
 
 # Define mapping logic
 def extract_communication_style(condition):
@@ -280,100 +262,104 @@ def extract_device_type(condition):
 conf_dat['Communication_Style'] = conf_dat['Condition'].apply(extract_communication_style)
 conf_dat['Device_Type'] = conf_dat['Condition'].apply(extract_device_type)
 
-# Display the DataFrame
-print(conf_dat) 
-
 condition_counts = conf_dat['Condition'].value_counts()
 
 # Print the number of participants in each condition
 print(condition_counts)
 
-# +
+
+
+# Step 1: Define all mappings
 # Step 1: Define all mappings
 mappings = {
     'News Habits': {
-        "Never": 1,
-        "Less often than once a month": 2,
-        "Less often than once a week": 3,
-        "Once a week": 4,
+        "never": 1,
+        "less often than once a month": 2,
+        "less often than once a week": 3,
+        "once a week": 4,
         "2-3 days a week": 5,
         "4-6 days a week": 6,
-        "Once a day": 7,
-        "Between 2 and 5 times a day": 8,
-        "Between 6 and 10 times a day": 9,
-        "More than 10 times a day": 10,
+        "once a day": 7,
+        "between 2 and 5 times a day": 8,
+        "between 6 and 10 times a day": 9,
+        "more than 10 times a day": 10,
     },
     'News Interests': {
-        "Not at all interested": 1,
-        "Not very interested": 2,
-        "Somewhat interested": 3,
-        "Very interested": 4,
-        "Extremely interested": 5,
+        "not at all interested": 1,
+        "not very interested": 2,
+        "somewhat interested": 3,
+        "very interested": 4,
+        "extremely interested": 5,
     },
     # Add more mappings for other columns if necessary
 }
 
 label_to_value1 = {
-    "Beschrijft het erg slecht": 1,
-    "Beschrijft het slecht": 2,
-    "Beschrijft het enigszins slecht": 3,
-    "Neutraal": 4,
-    "Beschrijft het enigszins goed": 5,
-    "Beschrijft het goed": 6,
-    "Beschrijft het erg goed": 7,
+    "beschrijft het erg slecht": 1,
+    "beschrijft het slecht": 2,
+    "beschrijft het enigszins slecht": 3,
+    "neutraal": 4,
+    "beschrijft het enigszins goed": 5,
+    "beschrijft het goed": 6,
+    "beschrijft het erg goed": 7,
 }
 
 device_trust_scale = {
-    "Heel erg oneens": 1,
-    "Oneens": 2,
-    "Neutraal": 3,
-    "Eens": 4,
-    "Heel erg eens": 5,
+    "heel erg oneens": 1,
+    "oneens": 2,
+    "neutraal": 3,
+    "eens": 4,
+    "heel erg eens": 5,
 }
 newspiece_scale = {
-    "Heel weinig vertrouwen": 1,
-    "Weinig vertrouwen": 2,
-    "Neutraal": 3,
-    "Vertrouwen": 4,
-    "Veel vertrouwen": 5,
+    "heel weinig vertrouwen": 1,
+    "weinig vertrouwen": 2,
+    "neutraal": 3,
+    "vertrouwen": 4,
+    "veel vertrouwen": 5,
 }
 
 likert_EN_5 = {
-    "Strongly disagree": 1,
-    "Somewhat disagree": 2,
-    "Neither agree nor disagree": 3, 
-    "Somewhat agree": 4,
-    "Strongly agree": 5
+    "strongly disagree": 1,
+    "somewhat disagree": 2,
+    "neither agree nor disagree": 3, 
+    "somewhat agree": 4,
+    "strongly agree": 5
 }
 
-likert_5_point = {
-    'Heel erg eens': 5,
-    'Eens': 4,
-    'Neutraal': 3,
-    'Oneens': 2,
-    'Heel erg oneens': 1
+likert_5_pointNL = {
+    'heel erg eens': 5,
+    'eens': 4,
+    'neutraal': 3,
+    'oneens': 2,
+    'heel erg oneens': 1
 }
 
-likert_7_point = {
-    "Heel erg oneens": 1,
-    "Oneens": 2,
-    "Enigszins Oneens": 3,
-    "Neutraal": 4,
-    "Engiszins eens": 5,
-    "Eens": 6,
-    "Heel erg eens": 7
+likert_7_pointNL = {
+    "heel erg oneens": 1,
+    "oneens": 2,
+    "enigszins oneens": 3,
+    "neutraal": 4,
+    "engiszins eens": 5,
+    "eens": 6,
+    "heel erg eens": 7
+
 }
 
+# +
 likert_robot = {
-    "Completely disagree": 1,
-    "Mostly disagree": 2,
-    "Slightly disagree": 3,
-    "Neither agree nor disagree": 4,
-    "Slightly agree": 5,
-    "Mostly agree": 6,
-    "Completely agree": 7
+    "completely disagree": 1,
+    "mostly disagree": 2,
+    "slightly disagree": 3,
+    "neither agree nor disagree": 4,
+    "slightly agree": 5,
+    "mostly agree": 6,
+    "completely agree": 7
 }
 
+
+
+# -
 
 # Step 2: Create a function to apply mappings
 def apply_mapping(df, column, mapping):
@@ -409,11 +395,11 @@ def preprocess_data(df):
         'Usability/Performanc_7', 'Usability/Performanc_8', 'Usability/Performanc_9',
         'Usability/Performanc_10'
     ]
-    df[sus_columns] = df[sus_columns].applymap(lambda x: likert_5_point.get(x, x))
+    df[sus_columns] = df[sus_columns].applymap(lambda x: likert_5_pointNL.get(x, x))
 
     # Apply 7-point Likert scale for enjoyment columns
     enjoyment_columns = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']  # Example column names
-    df[enjoyment_columns] = df[enjoyment_columns].applymap(lambda x: likert_7_point.get(x, x))
+    df[enjoyment_columns] = df[enjoyment_columns].applymap(lambda x: likert_7_pointNL.get(x, x))
 
     # Apply general news trust transformation
     generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']  # Replace with actual columns
@@ -429,13 +415,35 @@ def preprocess_data(df):
     societal_negative = ['AttitudeRobots2_8', 'Q27_1', 'Q27_2', 'Q27_3', 'Q27_4']
     all_robot_scales = personal_positive + personal_negative + societal_positive + societal_negative
     df[all_robot_scales] = df[all_robot_scales].applymap(lambda x: likert_robot.get(x, x))
+    
+    
+    generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']
+    df[generalNews_trust] = df[generalNews_trust].applymap(lambda x: likert_EN_5.get(x, x))
+
+    df[['AttitudeTechGeneral_1']] = df[['AttitudeTechGeneral_1']].applymap(lambda x: likert_EN_5.get(x, x))
     return df
 
+# +
 # Step 4: Apply the preprocessing function to the dataframe
 conf_dat = preprocess_data(conf_dat)
 
+
+def map_topics(topics):
+    topics_list = topics.split(", ")  # Split by commas to handle multiple topics
+    short_topics = [news_topics_short.get(topic.strip(), topic) for topic in topics_list]  # Map and strip any extra spaces
+    return ", ".join(short_topics)  # Join the mapped topics back into a single string
+
+# Apply the function to the 'News Topics' column
+conf_dat['News Topics Short'] = conf_dat['News Topics'].apply(map_topics)
+
+
+# Print the resulting dataframe
+print(conf_dat.head())
+print(conf_dat['News Topic Shorthand'])
+# -
+
 # Check the updated dataframe
-print(conf_dat)
+print(conf_dat.head(10))
 
 
 # +
@@ -480,18 +488,15 @@ conf_dat['Communication_Style'] = conf_dat['Communication_Style'].astype('catego
 # Summary statistics
 print(conf_dat[['Overall_Device_Trust']].describe())
 
-# Visualization
-import matplotlib.pyplot as plt
-
-#descriptive statistics
-sns.boxplot(x='Device_Type', y='Overall_Device_Trust', data=conf_dat)
-sns.boxplot(x='Communication_Style', y='Overall_Device_Trust', data=conf_dat)
-sns.boxplot(x='Condition', y='Overall_Device_Trust', data=conf_dat)
-
+# +
+# Create a copy of the DataFrame (this prevents fragmentation warning)
+conf_dat = conf_dat.copy()
 
 # Calculate the overall trust in information by averaging the three columns
 trustinfo_columns = [f'Trust in Information_{i}' for i in range(1, 4)]
 conf_dat['Overall_Trust_in_Info'] = conf_dat[trustinfo_columns].mean(axis=1)
+
+# -
 
 # Check the new column
 print(conf_dat[['Trust in Information_1', 'Trust in Information_2', 'Trust in Information_3', 'Overall_Trust_in_Info']].head())
@@ -564,6 +569,16 @@ conf_dat = pd.concat([conf_dat, new_columns], axis=1)
 
 # -
 
+# Apply conversion to numeric
+conf_dat[[   'personal_positive',
+    'personal_negative',
+    'societal_positive',
+    'societal_negative']] = conf_dat[['personal_positive',
+    'personal_negative',
+    'societal_positive',
+    'societal_negative']].apply(pd.to_numeric, errors='coerce')
+print(conf_dat['personal_negative'].head())
+
 # Apply the mapping to all relevant columns
 sus_columns = [
     'Usability/Performanc_1', 'Usability/Performanc_2', 'Usability/Performanc_3',
@@ -602,9 +617,6 @@ print(conf_dat[enjoyment].head())
 # Combine all column groups into a single list
 all_columns = enjoyment + likeability + IQ + anthro
 
-# Convert specified columns to numeric (assuming they already have numeric-like data)
-all_columns = enjoyment + likeability + IQ + anthro
-
 # Apply conversion to numeric
 conf_dat[all_columns] = conf_dat[all_columns].apply(pd.to_numeric, errors='coerce')
 
@@ -630,8 +642,6 @@ print(conf_dat['News Topics'])
 # For numeric variables (e.g., Age, trust scores)
 # Apply conversion to numeric
 
-generalNews_trust = [ 'News General Trust_1', 'News General Trust_2']
-conf_dat[generalNews_trust] = conf_dat[generalNews_trust].applymap(lambda x: likert_EN_5[x])
 numeric_columns = ['Political Leaning','Age', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
 conf_dat[numeric_columns] = conf_dat[numeric_columns].apply(pd.to_numeric, errors='coerce')
 
@@ -689,12 +699,15 @@ numerical_vars = [
     'Age', 'Political Leaning', 'News General Trust_1', 'News General Trust_2',
     'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4',
     'Overall_Device_Trust', 'Overall_Trust_News', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score',
-    'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism'
+    'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism','personal_positive',
+    'personal_negative',
+    'societal_positive',
+    'societal_negative', 'News Habits_Numeric', 'News Interests_Numeric'
 ]
 
 categorical_vars = [
     'Language', 'Gender', 'devices.used.News',
-    'Gender of Robot', 'Condition',
+    'Gender of Robot',
     'Communication_Style', 'Device_Type', 'prior exposure','Novelty_1', 'Novelty_2'
 ]
 
@@ -764,6 +777,23 @@ plt.tight_layout()
 print(list(data_combined.columns))
 
 
+# +
+
+
+# List of dependent variables (DVs)
+dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
+
+# List of independent variables (IVs)
+independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+
+
+
+# Check the results
+print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
+print(conf_dat.columns)
+# -
+
+
 from statsmodels.multivariate.manova import MANOVA
 # Fit MANOVA model
 manova = MANOVA.from_formula('Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_Transactional * Device_Type_Speaker', data=data_combined)
@@ -783,60 +813,18 @@ print(response_counts)
 # +
 import statsmodels.api as sm
 
-# List of dependent variables (DVs)
-dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
-
-# List of independent variables (IVs)
-independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
-
-
-# Define mappings for different columns
-mappings = {
-    'News Habits': {
-        "Never": 1,
-        "Less often than once a month": 2,
-        "Less often than once a week": 3,
-        "Once a week": 4,
-        "2-3 days a week": 5,
-        "4-6 days a week": 6,
-        "Once a day": 7,
-        "Between 2 and 5 times a day": 8,
-        "Between 6 and 10 times a day": 9,
-        "More than 10 times a day": 10,
-    },
-    'News Interests': {
-        "Not at all interested": 1,
-        "Not very interested": 2,
-        "Somewhat interested": 3,
-        "Very interested": 4,
-        "Extremely interested": 5,
-    },
-    # Add more mappings for other columns as needed
-}
-
-# Loop through each column and apply the appropriate mapping
-for col, mapping in mappings.items():
-    new_col_name = f"{col}_Numeric"  # Create a new column name with '_Numeric'
-    conf_dat[new_col_name] = conf_dat[col].map(mapping)  # Apply the specific mapping
-
-# Check the results
-print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
-print(conf_dat.columns)
-
-
-# +
 # Threshold for p-value to include variables in the model
 p_value_threshold = 0.05
 
 # Convert categorical variables to dummy variables
 df_encoded = pd.get_dummies(conf_dat, columns=[
     'Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Device_Type',
-    '1st Piece', '2nd Piece', '3rd Piece', 'Novelty_1', 'Novelty_2','devices.used.News'
+    '1st Piece', '2nd Piece', '3rd Piece', 'Novelty_1', 'Novelty_2','devices.used.News', 'prior exposure','check_1', 'check_2', 'check_3', 'News Topics'
 ], drop_first=True)
 
 # List of columns to be dummy coded
 columns_to_dummy = ['Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 
-                    'Device_Type', '1st Piece', '2nd Piece', '3rd Piece','devices.used.News', 'Novelty']
+                    'Device_Type', '1st Piece', '2nd Piece', '3rd Piece','devices.used.News', 'Novelty', 'prior exposure','check_1', 'check_2', 'check_3', 'News Topics']
 # Filter only the dummy coded columns
 dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) for c in columns_to_dummy)]
 
