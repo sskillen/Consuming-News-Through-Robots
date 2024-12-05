@@ -241,6 +241,15 @@ for col in conf_dat:
 
 print(conf_dat.head()) #all data is here at this point
 
+# Step 2: Replace "prefer not to say" with 11 in 'Political Leaning'
+conf_dat['Political Leaning'] = conf_dat['Political Leaning'].replace("prefer not to say", 11)
+
+# Step 3: Replace "don't know" with 11 in the specified 'Trust in Sources' columns
+columns_to_update = ['Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4']
+for col in columns_to_update:
+    conf_dat[col] = conf_dat[col].replace("don't know", 11)
+
+print(conf_dat[columns_to_update].head())
 
 
 # Define mapping logic
@@ -805,6 +814,13 @@ dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) f
 
 # Combine the original independent variables with the dummy-coded variables
 combined_independent_vars = independent_vars + dummy_coded_vars
+# List of variables to be removed
+variables_to_remove = ['check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure','#_selected', 'Education_5_TEXT']
+
+# Remove those variables from combined_independent_vars
+combined_independent_vars = [var for var in combined_independent_vars if var not in variables_to_remove]
+
+
 
 print("Combined Independent Variables:")
 print(combined_independent_vars)
@@ -812,6 +828,7 @@ print(combined_independent_vars)
 
 # +
 #correct non-numeric data types in columns
+
 
 df_encoded[combined_independent_vars] = df_encoded[combined_independent_vars].astype('int64', errors='ignore')
 
@@ -825,14 +842,12 @@ if len(non_numeric_cols) > 0:
 else:
     print("\nAll Independent Variables are Numeric.")
 
-# -
-
 # Loop through each dependent variable and apply forward selection
 for dv in dependent_vars:
     print(f"\nForward Selection for Dependent Variable: {dv}")
     
     y = df_encoded[dv]  # Current dependent variable
-    X = df_encoded[independent_vars]  # All independent variables
+    X = df_encoded[combined_independent_vars]  # All independent variables
     X = sm.add_constant(X)  # Add intercept
     
     # Start with an empty model (just the intercept)
@@ -875,9 +890,7 @@ for dv in dependent_vars:
     else:
         print("No variables met the p-value threshold.")
 
-# Check for NaN values in the entire DataFrame after dummy encoding
-print("Missing Values in Encoded DataFrame:")
-print(df_encoded.isnull().sum())
+
 
 
 
