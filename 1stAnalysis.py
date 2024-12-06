@@ -727,14 +727,22 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+print(strong_corr.columns)
 # Shorten variable names
 short_names = {
-    "devices.used.News_Connected TV (a TV that connects to the internet via set top box, game console, other box such as Apple TV etc.)": "TV_Connected",
-    "devices.used.News_Laptop or desktop computer (at work or home)": "Computer",
+    'devices.used.News_connected tv (a tv that connects to the internet via set top box, game console, other box such as apple tv etc.)': "TV_Connected",
+    'devices.used.News_laptop or desktop computer (at work or home)': "Computer",
     "Trust in Sources_1": "Trust_NOS",
     "Trust in Sources_2": "Trust_Telegraaf",
     "Trust in Sources_3": "Trust_Volkskrant",
-    "Trust in Sources_4": "Trust_RTL"
+    "Trust in Sources_4": "Trust_RTL",
+    "News General Trust_1": "Trusts Most News",
+    "News General Trust_2": "Trusts.Personal.NewsConsumption",
+    'devices.used.News_smartphone': "Smartphone-NewsAccess",
+    'Gender of Robot_geen van beide': "Neither_GenderPerceived", 
+    'Gender of Robot_mannelijk': "Male_GenderPerceived",
+    'Novelty_1_nee': "Never_Heardof_Devices",
+    'Novelty_2_nee': "Never_Used_Devices"
 }
 
 strong_corr = strong_corr.rename(columns=short_names, index=short_names)
@@ -759,12 +767,6 @@ plt.tight_layout()
 plt.subplots_adjust(bottom=0.2, left=0.2)
 plt.show()
 
-
-# List of dependent variables (DVs)
-dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
-
-# List of independent variables (IVs)
-independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
 
 
 
@@ -797,8 +799,12 @@ print(response_counts)
 # +
 import statsmodels.api as sm
 
-# Threshold for p-value to include variables in the model
-p_value_threshold = 0.05
+# List of dependent variables (DVs)
+dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
+
+# List of independent variables (IVs)
+independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+
 
 # Convert categorical variables to dummy variables
 df_encoded = pd.get_dummies(conf_dat, columns=[
@@ -826,6 +832,7 @@ print("Combined Independent Variables:")
 print(combined_independent_vars)
 
 
+#
 # +
 #correct non-numeric data types in columns
 
@@ -842,55 +849,98 @@ if len(non_numeric_cols) > 0:
 else:
     print("\nAll Independent Variables are Numeric.")
 
-# Loop through each dependent variable and apply forward selection
-for dv in dependent_vars:
-    print(f"\nForward Selection for Dependent Variable: {dv}")
-    
-    y = df_encoded[dv]  # Current dependent variable
-    X = df_encoded[combined_independent_vars]  # All independent variables
-    X = sm.add_constant(X)  # Add intercept
-    
-    # Start with an empty model (just the intercept)
-    X_current = X[['const']]
-    
-    # Initialize the best model
-    best_model = None
-    
-    # Remaining variables to consider
-    remaining_vars = list(X.columns[1:])  # Exclude 'const'
-    
-    # Forward selection process
-    while remaining_vars:
-        p_values = []  # Store p-values for this step
-        for var in remaining_vars:
-            X_temp = X_current.copy()
-            X_temp[var] = X[var]  # Add variable to the model
-            
-            # Fit the model
-            model = sm.OLS(y, X_temp).fit()
-            
-            # Store the p-value of the added variable
-            p_values.append((var, model.pvalues[var]))
-        
-        # Sort variables by p-value (ascending)
-        p_values.sort(key=lambda x: x[1])
-        
-        # Add the variable with the lowest p-value if it's below the threshold
-        if p_values[0][1] < p_value_threshold:
-            selected_var = p_values[0][0]
-            best_model = sm.OLS(y, X_current.assign(**{selected_var: X[selected_var]})).fit()
-            X_current[selected_var] = X[selected_var]  # Add variable to the model
-            remaining_vars.remove(selected_var)  # Remove selected variable
+import statsmodels.api as sm
+
+def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_threshold=0.05):
+    """
+    Perform forward selection for each dependent variable in the list of dependent variables.
+
+    Args:
+        df_encoded (DataFrame): The DataFrame containing the data (with dummy variables, etc.).
+        dependent_vars (list): List of column names to be used as dependent variables.
+        independent_vars (list): List of column names to be used as independent variables.
+        p_value_threshold (float): p-value threshold for including variables in the model. Default is 0.05.
+
+    Returns:
+        dict: A dictionary with dependent variables as keys and the corresponding best models as values.
+    """
+    results = {}  # To store the results of the best models for each dependent variable
+
+    # Loop through each dependent variable
+    for dv in dependent_vars:
+        print(f"\nForward Selection for Dependent Variable: {dv}")
+
+        y = df_encoded[dv]  # Current dependent variable
+        X = df_encoded[independent_vars]  # All independent variables
+        X = sm.add_constant(X)  # Add intercept
+
+        # Start with an empty model (just the intercept)
+        X_current = X[['const']]
+
+        # Initialize the best model
+        best_model = None
+
+        # Remaining variables to consider (excluding constant)
+        remaining_vars = list(X.columns[1:])
+
+        # Forward selection process
+        while remaining_vars:
+            p_values = []  # Store p-values for this step
+            for var in remaining_vars:
+                X_temp = X_current.copy()
+                X_temp[var] = X[var]  # Add variable to the model
+
+                # Fit the model
+                model = sm.OLS(y, X_temp).fit()
+
+                # Store the p-value of the added variable
+                p_values.append((var, model.pvalues[var]))
+
+            # Sort variables by p-value (ascending)
+            p_values.sort(key=lambda x: x[1])
+
+            # Add the variable with the lowest p-value if it's below the threshold
+            if p_values[0][1] < p_value_threshold:
+                selected_var = p_values[0][0]
+                best_model = sm.OLS(y, X_current.assign(**{selected_var: X[selected_var]})).fit()
+                X_current[selected_var] = X[selected_var]  # Add variable to the model
+                remaining_vars.remove(selected_var)  # Remove selected variable
+            else:
+                break  # Stop if no variable meets the threshold
+
+        # Store the best model in the results dictionary
+        results[dv] = best_model
+
+        # Print the summary of the best model for the current dependent variable
+        if best_model:
+            print(best_model.summary())
         else:
-            break  # Stop if no variable meets the threshold
+            print("No variables met the p-value threshold.")
     
-    # Print the summary of the best model for the current dependent variable
-    if best_model:
-        print(best_model.summary())
-    else:
-        print("No variables met the p-value threshold.")
+    return results
+
+# Call the forward_selection function with your data and lists of dependent and independent variables
+results = forward_selection(df_encoded, dependent_vars, combined_independent_vars, p_value_threshold=0.05)
+
+# Now you can access the best models for each dependent variable
+for dv, model in results.items():
+    print(f"\nModel for {dv}:")
+    print(model.summary())
 
 
 
+# Third regression to test hypothesis 3
+newsTrust = [ 'Overall_Trust_News']
+
+# add overall device trust to independent varibles
+independent_vars2 = ['Overall_Device_Trust','Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+
+# Combine the original independent variables with the dummy-coded variables
+combined_independent_vars2 = independent_vars2 + dummy_coded_vars
+
+# Remove those variables from combined_independent_vars
+combined_independent_vars2 = [var for var in combined_independent_vars2 if var not in variables_to_remove]
+# Call the forward_selection function with your data and lists of dependent and independent variables
+results_H3 = forward_selection(df_encoded, newsTrust, combined_independent_vars2, p_value_threshold=0.05)
 
 
