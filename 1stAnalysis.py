@@ -807,7 +807,7 @@ df_encoded = pd.get_dummies(conf_dat, columns=[
 ], drop_first=True)
 
 # List of columns to be dummy coded
-columns_to_dummy = ['Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 
+columns_to_dummy = ['Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Condition',
                     'Device_Type', '1st Piece', '2nd Piece', '3rd Piece','devices.used.News', 'Novelty', 'prior exposure','check_1', 'check_2', 'check_3', 'News Topics']
 # Filter only the dummy coded columns
 dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) for c in columns_to_dummy)]
@@ -815,7 +815,7 @@ dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) f
 # Combine the original independent variables with the dummy-coded variables
 combined_independent_vars = independent_vars + dummy_coded_vars
 # List of variables to be removed
-variables_to_remove = ['check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure','#_selected', 'Education_5_TEXT']
+variables_to_remove = ['check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure','#_selected', 'Education_5_TEXT', 'Condition']
 
 # Remove those variables from combined_independent_vars
 combined_independent_vars = [var for var in combined_independent_vars if var not in variables_to_remove]
