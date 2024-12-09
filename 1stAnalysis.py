@@ -276,6 +276,48 @@ condition_counts = conf_dat['Condition'].value_counts()
 # Print the number of participants in each condition
 print(condition_counts)
 
+# Correct answers for recall of news content
+correct_answers = {
+    'recall judges': 'fout',
+    'recall VVD': 'fout',
+    'recall climate': 'goed',
+    'recall study grant': 'goed',
+    'check_1': 'goed',
+    'check_2': 'goed'
+}
+
+# Function to check correctness for recall questions and fixed checks
+def check_correctness(row, correct_answers):
+    results = {}
+    for column, correct in correct_answers.items():
+        if pd.isna(row[column]):  # Handle missing values
+            results[column] = None  # No answer provided
+        else:
+            results[column] = row[column] == correct  # True if correct, False otherwise
+    return results
+
+# Function to check correctness for check_3 based on Device_Type
+def check_check_3(row):
+    if row['Device_Type'] == 'robot':
+        return row['check_3'] == 'goed'
+    elif row['Device_Type'] == 'speaker':
+        return row['check_3'] == 'fout'
+    else:
+        return None  # Handle unexpected values or missing Device_Type
+
+# Apply the correctness check for recall and fixed checks
+conf_dat['Correctness'] = conf_dat.apply(lambda row: check_correctness(row, correct_answers), axis=1)
+
+# Add a separate column for check_3 correctness based on Device_Type
+conf_dat['check_3_correct'] = conf_dat.apply(lambda row: check_check_3(row), axis=1)
+
+# Split the correctness dictionary into individual columns for clarity (optional)
+for column in correct_answers:
+    conf_dat[f'{column}_correct'] = conf_dat['Correctness'].apply(lambda x: x[column] if x is not None else None)
+
+# Drop the combined 'Correctness' column if only individual columns are needed
+conf_dat.drop(columns=['Correctness'], inplace=True)
+
 
 
 # Step 1: Define all mappings
@@ -713,6 +755,8 @@ print(data_combined.columns)
 # Compute correlation matrix (Pearson for numerical variables)
 correlation_matrix = data_combined.corr()
 
+#filter correlations on p value
+
 
 # Set correlation threshold (e.g., |0.3| for stronger correlations)
 threshold = 0.3
@@ -826,6 +870,7 @@ variables_to_remove = ['check_1', 'check_2', 'check_3', 'News Topics', 'prior ex
 # Remove those variables from combined_independent_vars
 combined_independent_vars = [var for var in combined_independent_vars if var not in variables_to_remove]
 
+print(conf_dat['#_selected'].head(15))
 
 
 print("Combined Independent Variables:")
@@ -927,7 +972,7 @@ for dv, model in results.items():
     print(f"\nModel for {dv}:")
     print(model.summary())
 
-
+#PLOOOOT combinations
 
 # Third regression to test hypothesis 3
 newsTrust = [ 'Overall_Trust_News']
