@@ -767,8 +767,8 @@ plt.tight_layout()
 plt.subplots_adjust(bottom=0.2, left=0.2)
 plt.show()
 
-
-
+#print value
+print(data_combined['Novelty_1_nee'].head)
 
 # Check the results
 print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News Interests_Numeric']].head())
