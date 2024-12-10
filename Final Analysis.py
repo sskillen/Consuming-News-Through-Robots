@@ -816,11 +816,13 @@ short_names = {
     'Gender of Robot_geen van beide': "Neither_GenderPerceived", 
     'Gender of Robot_mannelijk': "Male_GenderPerceived",
     'Novelty_1_nee': "Never_Heardof_Devices",
-    'Novelty_2_nee': "Never_Used_Devices"
+    'Novelty_2_nee': "Never_Used_Devices",
+    
 }
 
 # Rename columns and rows using short names
 heatmap_data = heatmap_data.rename(columns=short_names, index=short_names)
+print(heatmap_data.columns)
 
 # Mask the upper triangle for symmetry
 mask = np.triu(np.ones_like(heatmap_data, dtype=bool))
@@ -831,6 +833,7 @@ sns.heatmap(
     heatmap_data, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5,
     mask=mask, annot_kws={"size": 12}, cbar_kws={'shrink': 0.75}
 )
+
 
 # Adjust labels and titles
 plt.xticks(rotation=45, ha='right', fontsize=10)
@@ -844,11 +847,23 @@ plt.show()
 
 
 from statsmodels.multivariate.manova import MANOVA
-# Fit MANOVA model
-manova = MANOVA.from_formula('Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker', data=data_combined)
 
-# Get the results
-print(manova.mv_test())
+# Rename column
+data_combined.rename(columns={'News Interests_Numeric': 'News_Interests_Numeric'}, inplace=True)
+#manova = MANOVA.from_formula(
+   # 'Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Overall_Device_Trust + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Never_Used_Devices + Novelty_2_nee',
+   # data=data_combined
+#)
+
+manova = MANOVA.from_formula(
+    'Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Novelty_2_nee',
+    data=data_combined
+)
+# Run the MANOVA test
+result = manova.mv_test()
+
+# Display the results
+print(result)
 
 
 # +
@@ -863,57 +878,11 @@ print(response_counts)
 import statsmodels.api as sm
 
 # List of dependent variables (DVs)
-dependent_vars = [ 'Overall_Trust_News', 'Overall_Device_Trust']
+dependent_vars = [ 'Overall_Trust_News']
 
 # List of independent variables (IVs)
-independent_vars = ['Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+independent_vars = ['Avg_IQ', 'Avg_Enjoyment']
 
-
-# Convert categorical variables to dummy variables
-df_encoded = pd.get_dummies(conf_dat, columns=[
-    'Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Device_Type',
-    '1st Piece', '2nd Piece', '3rd Piece', 'Novelty_1', 'Novelty_2','devices.used.News', 'prior exposure','check_1', 'check_2', 'check_3', 'News Topics'
-], drop_first=True)
-
-# List of columns to be dummy coded
-columns_to_dummy = ['Language', 'Gender', 'Education', 'Gender of Robot', 'Communication_Style', 'Condition',
-                    'Device_Type', '1st Piece', '2nd Piece', '3rd Piece','devices.used.News', 'Novelty', 'prior exposure','check_1', 'check_2', 'check_3', 'News Topics']
-# Filter only the dummy coded columns
-dummy_coded_vars = [col for col in df_encoded.columns if any(col.startswith(c) for c in columns_to_dummy)]
-
-# Combine the original independent variables with the dummy-coded variables
-combined_independent_vars = independent_vars + dummy_coded_vars
-# List of variables to be removed
-variables_to_remove = ['check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure','#_selected', 'Education_5_TEXT', 'Condition']
-
-# Remove those variables from combined_independent_vars
-combined_independent_vars = [var for var in combined_independent_vars if var not in variables_to_remove]
-
-print(conf_dat['#_selected'].head(15))
-
-
-print("Combined Independent Variables:")
-print(combined_independent_vars)
-
-
-#
-# +
-#correct non-numeric data types in columns
-
-
-df_encoded[combined_independent_vars] = df_encoded[combined_independent_vars].astype('int64', errors='ignore')
-
-print("\nUpdated Data Types of Independent Variables:")
-print(df_encoded[combined_independent_vars].dtypes)
-
-non_numeric_cols = df_encoded[combined_independent_vars].select_dtypes(include=['object', 'category']).columns
-if len(non_numeric_cols) > 0:
-    print("\nNon-Numeric Independent Variables:")
-    print(non_numeric_cols)
-else:
-    print("\nAll Independent Variables are Numeric.")
-
-import statsmodels.api as sm
 
 def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_threshold=0.05):
     """
@@ -984,7 +953,7 @@ def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_thre
     return results
 
 # Call the forward_selection function with your data and lists of dependent and independent variables
-results = forward_selection(df_encoded, dependent_vars, combined_independent_vars, p_value_threshold=0.05)
+results = forward_selection(data_combined, dependent_vars, independent_vars, p_value_threshold=0.05)
 
 # Now you can access the best models for each dependent variable
 for dv, model in results.items():
