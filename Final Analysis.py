@@ -873,7 +873,6 @@ response_counts = conf_dat[['News Habits', 'News Interests']].value_counts()
 # Display the response counts
 print(response_counts)
 
-
 # +
 import statsmodels.api as sm
 
@@ -898,6 +897,7 @@ def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_thre
         dict: A dictionary with dependent variables as keys and the corresponding best models as values.
     """
     results = {}  # To store the results of the best models for each dependent variable
+
 
     # Loop through each dependent variable
     for dv in dependent_vars:
@@ -960,19 +960,16 @@ for dv, model in results.items():
     print(f"\nModel for {dv}:")
     print(model.summary())
 
-#PLOOOOT combinations
 
 # Third regression to test hypothesis 3
 newsTrust = [ 'Overall_Trust_News']
 
 # add overall device trust to independent varibles
-independent_vars2 = ['Overall_Device_Trust','Age', 'News Habits_Numeric', 'News Interests_Numeric', 'Political Leaning', 'News General Trust_1', 'News General Trust_2', 'Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4', 'check_1', 'check_2', 'check_3', 'News Topics', 'prior exposure', '#_selected', 'Avg_trustpropensity', 'Avg_TECHtrust', 'SUS_Score', 'Avg_Enjoyment', 'Avg_Likeability', 'Avg_IQ', 'Avg_Anthropomorphism']
+independent_vars2 = ['Overall_Device_Trust', 'News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
 
-# Combine the original independent variables with the dummy-coded variables
-combined_independent_vars2 = independent_vars2 + dummy_coded_vars
 
-# Remove those variables from combined_independent_vars
-combined_independent_vars2 = [var for var in combined_independent_vars2 if var not in variables_to_remove]
+
+
 # Call the forward_selection function with your data and lists of dependent and independent variables
-results_H3 = forward_selection(df_encoded, newsTrust, combined_independent_vars2, p_value_threshold=0.05)
+results_H3 = forward_selection(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
 
