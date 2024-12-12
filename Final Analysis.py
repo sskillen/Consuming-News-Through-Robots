@@ -831,14 +831,14 @@ mask = np.triu(np.ones_like(heatmap_data, dtype=bool))
 plt.figure(figsize=(18, 12))
 sns.heatmap(
     heatmap_data, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5,
-    mask=mask, annot_kws={"size": 12}, cbar_kws={'shrink': 0.75}
+    mask=mask, annot_kws={"size": 9}, cbar_kws={'shrink': 0.75}
 )
 
 
 # Adjust labels and titles
 plt.xticks(rotation=45, ha='right', fontsize=10)
 plt.yticks(rotation=0, fontsize=10)
-plt.title("Statistically Significant and Strong Correlations (p < 0.05, |r| ≥ 0.3)", fontsize=18)
+plt.title("Statistically Significant and Strong Correlations (p < 0.05, |r| >= 0.3)", fontsize=18)
 
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.2, left=0.2)
@@ -866,7 +866,34 @@ result = manova.mv_test()
 print(result)
 
 
-# +
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+
+# Define the independent variables (the same for all ANOVAs)
+formula = 'Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Novelty_2_nee'
+
+# List of dependent variables
+dependent_vars = ['Overall_Trust_News', 'Overall_Device_Trust']
+
+# Run separate ANOVAs for each dependent variable
+for dep_var in dependent_vars:
+    # Construct the formula for ANOVA
+    anova_formula = f'{dep_var} ~ {formula}'
+
+    # Fit the model
+    model = ols(anova_formula, data=data_combined).fit()
+
+    # Run the ANOVA test
+    anova_results = anova_lm(model, typ=2)
+
+    # Display the results
+    print(f'ANOVA results for {dep_var}:')
+    print(anova_results)
+    print('\n' + '-'*50 + '\n')
+
+
+
 # Count occurrences of each unique response in 'News_Frequency'
 response_counts = conf_dat[['News Habits', 'News Interests']].value_counts()
 
@@ -881,6 +908,78 @@ dependent_vars = [ 'Overall_Trust_News']
 
 # List of independent variables (IVs)
 independent_vars = ['Avg_IQ', 'Avg_Enjoyment']
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def save_table_as_image(dataframe, image_path):
+    # Create a Matplotlib figure
+    fig, ax = plt.subplots(figsize=(10, dataframe.shape[0] * 0.5))  # Adjust height based on number of rows
+    ax.axis('tight')
+    ax.axis('off')
+
+    # Create a table in the figure
+    table = plt.table(cellText=dataframe.values,
+                      colLabels=dataframe.columns,
+                      cellLoc='center',
+                      loc='center')
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.auto_set_column_width(col=list(range(len(dataframe.columns))))
+
+    # Save the table as an image
+    plt.savefig(image_path, bbox_inches='tight', dpi=300)
+    plt.close(fig)
+
+def forward_selection_with_image(df_encoded, dependent_vars, independent_vars, p_value_threshold=0.05):
+    results = {}
+    tables = []
+
+    for dv in dependent_vars:
+        y = df_encoded[dv]
+        X = df_encoded[independent_vars]
+        X = sm.add_constant(X)
+
+        X_current = X[['const']]
+        best_model = None
+        remaining_vars = list(X.columns[1:])
+
+        while remaining_vars:
+            p_values = []
+            for var in remaining_vars:
+                X_temp = X_current.copy()
+                X_temp[var] = X[var]
+                model = sm.OLS(y, X_temp).fit()
+                p_values.append((var, model.pvalues[var]))
+            p_values.sort(key=lambda x: x[1])
+
+            if p_values[0][1] < p_value_threshold:
+                selected_var = p_values[0][0]
+                best_model = sm.OLS(y, X_current.assign(**{selected_var: X[selected_var]})).fit()
+                X_current[selected_var] = X[selected_var]
+                remaining_vars.remove(selected_var)
+            else:
+                break
+
+        results[dv] = best_model
+
+        if best_model:
+            model_table = pd.DataFrame({
+                "Variable": best_model.params.index,
+                "Coefficient": best_model.params.values,
+                "P-value": best_model.pvalues.values,
+                "R-squared": [best_model.rsquared] * len(best_model.params)
+            })
+            model_table["Dependent Variable"] = dv
+            tables.append(model_table)
+
+    final_table = pd.concat(tables, ignore_index=True)
+
+    # Save as an image
+    save_table_as_image(final_table, "forward_selection_results.png")
+
+    print("Table saved as 'forward_selection_results.png'")
+    return results, final_table
 
 
 def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_threshold=0.05):
@@ -952,13 +1051,7 @@ def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_thre
     
     return results
 
-# Call the forward_selection function with your data and lists of dependent and independent variables
-results = forward_selection(data_combined, dependent_vars, independent_vars, p_value_threshold=0.05)
 
-# Now you can access the best models for each dependent variable
-for dv, model in results.items():
-    print(f"\nModel for {dv}:")
-    print(model.summary())
 
 
 # Third regression to test hypothesis 3
@@ -967,9 +1060,12 @@ newsTrust = [ 'Overall_Trust_News']
 # add overall device trust to independent varibles
 independent_vars2 = ['Overall_Device_Trust', 'News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
 
+withoutDeviceTrust = ['News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
 
 
 
 # Call the forward_selection function with your data and lists of dependent and independent variables
-results_H3 = forward_selection(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
+results = forward_selection(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
+results_no_DeviceTrust = forward_selection(data_combined, newsTrust, withoutDeviceTrust, p_value_threshold=0.05)
 
+resultswithImage = forward_selection_with_image(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
