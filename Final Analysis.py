@@ -569,9 +569,26 @@ conf_dat['Overall_Trust_News'] = conf_dat[reverse_columns1].mean(axis=1)
 print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_Trust_News']].head())
 
 print(conf_dat.columns)
+#function to test the realibility of trust measures
+def calculate_cronbach_alpha(dataframe):
+    """
+    Calculate Cronbach's alpha for a DataFrame where rows are participants 
+    and columns are survey items.
+    """
+    item_variances = dataframe.var(axis=0, ddof=1)  # Variance for each item
+    total_score_variance = dataframe.sum(axis=1).var(ddof=1)  # Variance of total scores
+    num_items = dataframe.shape[1]  # Number of items
+    
+    # Cronbach's alpha formula
+    cronbach_alpha = (num_items / (num_items - 1)) * (1 - item_variances.sum() / total_score_variance)
+    return cronbach_alpha
 
-# Print all column names as a list
-print(list(conf_dat.columns))
+# Calculate Cronbach's alpha for the credibility/overall trust in news
+cronbach_alpha_news = calculate_cronbach_alpha(conf_dat[reverse_columns1])
+print(f"Cronbach's Alpha for Overall Trust In News: {cronbach_alpha_news}")
+cronbach_alpha_device = calculate_cronbach_alpha(conf_dat[device_trust_columns])
+print(f"Cronbach's Alpha for Trust in Device: {cronbach_alpha_device}")
+
 
 # Reverse code the numeric values
 conf_dat['PropsensityTrustTech_4_Rev'] = 6 - conf_dat['PropsensityTrustTech_4']
@@ -781,6 +798,9 @@ print(conf_dat[['News Habits', 'News Interests', 'News Habits_Numeric', 'News In
 # Display all columns in a list
 column_list = list(data_combined.columns)
 print(column_list)
+
+
+
 
 
 import seaborn as sns
@@ -1061,11 +1081,11 @@ newsTrust = [ 'Overall_Trust_News']
 independent_vars2 = ['Overall_Device_Trust', 'News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
 
 withoutDeviceTrust = ['News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
-
+withoutDeviceTrustandIQ = ['News_Interests_Numeric', 'Avg_Enjoyment']
 
 
 # Call the forward_selection function with your data and lists of dependent and independent variables
 results = forward_selection(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
 results_no_DeviceTrust = forward_selection(data_combined, newsTrust, withoutDeviceTrust, p_value_threshold=0.05)
-
+results_no_DeviceTrustandIQ = forward_selection(data_combined, newsTrust, withoutDeviceTrustandIQ, p_value_threshold=0.05)
 resultswithImage = forward_selection_with_image(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
