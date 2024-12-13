@@ -569,7 +569,10 @@ conf_dat['Overall_Trust_News'] = conf_dat[reverse_columns1].mean(axis=1)
 print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_Trust_News']].head())
 
 print(conf_dat.columns)
-#function to test the realibility of trust measures
+
+import matplotlib.pyplot as plt
+
+# Function to calculate Cronbach's alpha
 def calculate_cronbach_alpha(dataframe):
     """
     Calculate Cronbach's alpha for a DataFrame where rows are participants 
@@ -583,11 +586,45 @@ def calculate_cronbach_alpha(dataframe):
     cronbach_alpha = (num_items / (num_items - 1)) * (1 - item_variances.sum() / total_score_variance)
     return cronbach_alpha
 
-# Calculate Cronbach's alpha for the credibility/overall trust in news
+# Calculate Cronbach's alpha for the two trust measures
 cronbach_alpha_news = calculate_cronbach_alpha(conf_dat[reverse_columns1])
-print(f"Cronbach's Alpha for Overall Trust In News: {cronbach_alpha_news}")
 cronbach_alpha_device = calculate_cronbach_alpha(conf_dat[device_trust_columns])
-print(f"Cronbach's Alpha for Trust in Device: {cronbach_alpha_device}")
+
+# Data for the table
+data = [
+    ["Trust in News", f"{cronbach_alpha_news:.3f}"],
+    ["Trust in Devices", f"{cronbach_alpha_device:.3f}"]
+]
+
+# Create the table image
+fig, ax = plt.subplots(figsize=(4, 2))
+ax.axis('tight')
+ax.axis('off')
+
+# Create the table with bold labels
+table = ax.table(
+    cellText=data,
+    colLabels=["Measure", "Cronbach's Alpha"],
+    colColours=["lightblue", "lightblue"],
+    cellLoc='center',
+    loc='center',
+)
+
+# Apply bold formatting to headers and first column
+for (row, col), cell in table.get_celld().items():
+    if row == 0:  # Header row
+        cell.set_text_props(weight='bold')
+    if col == 0:  # First column (labels)
+        cell.set_text_props(weight='bold')
+
+# Save the table as an image
+plt.savefig("cronbach_alpha_table.png", bbox_inches='tight', dpi=300)
+
+# Display the image
+plt.show()
+
+
+
 
 
 # Reverse code the numeric values
