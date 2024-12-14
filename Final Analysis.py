@@ -570,60 +570,6 @@ print(conf_dat[['credibility_1', 'credibility_2', 'credibility_8', 'Overall_Trus
 
 print(conf_dat.columns)
 
-import matplotlib.pyplot as plt
-
-# Function to calculate Cronbach's alpha
-def calculate_cronbach_alpha(dataframe):
-    """
-    Calculate Cronbach's alpha for a DataFrame where rows are participants 
-    and columns are survey items.
-    """
-    item_variances = dataframe.var(axis=0, ddof=1)  # Variance for each item
-    total_score_variance = dataframe.sum(axis=1).var(ddof=1)  # Variance of total scores
-    num_items = dataframe.shape[1]  # Number of items
-    
-    # Cronbach's alpha formula
-    cronbach_alpha = (num_items / (num_items - 1)) * (1 - item_variances.sum() / total_score_variance)
-    return cronbach_alpha
-
-# Calculate Cronbach's alpha for the two trust measures
-cronbach_alpha_news = calculate_cronbach_alpha(conf_dat[reverse_columns1])
-cronbach_alpha_device = calculate_cronbach_alpha(conf_dat[device_trust_columns])
-
-# Data for the table
-data = [
-    ["Trust in News", f"{cronbach_alpha_news:.3f}"],
-    ["Trust in Devices", f"{cronbach_alpha_device:.3f}"]
-]
-
-# Create the table image
-fig, ax = plt.subplots(figsize=(4, 2))
-ax.axis('tight')
-ax.axis('off')
-
-# Create the table with bold labels
-table = ax.table(
-    cellText=data,
-    colLabels=["Measure", "Cronbach's Alpha"],
-    colColours=["lightblue", "lightblue"],
-    cellLoc='center',
-    loc='center',
-)
-
-# Apply bold formatting to headers and first column
-for (row, col), cell in table.get_celld().items():
-    if row == 0:  # Header row
-        cell.set_text_props(weight='bold')
-    if col == 0:  # First column (labels)
-        cell.set_text_props(weight='bold')
-
-# Save the table as an image
-plt.savefig("cronbach_alpha_table.png", bbox_inches='tight', dpi=300)
-
-# Display the image
-plt.show()
-
-
 
 
 
@@ -737,6 +683,62 @@ conf_dat['Avg_IQ'] = conf_dat[IQ].mean(axis=1)
 
 # Calculate average for anthropomorphism
 conf_dat['Avg_Anthropomorphism'] = conf_dat[anthro].mean(axis=1)
+
+import matplotlib.pyplot as plt
+
+# Function to calculate Cronbach's alpha
+def calculate_cronbach_alpha(dataframe):
+    """
+    Calculate Cronbach's alpha for a DataFrame where rows are participants 
+    and columns are survey items.
+    """
+    item_variances = dataframe.var(axis=0, ddof=1)  # Variance for each item
+    total_score_variance = dataframe.sum(axis=1).var(ddof=1)  # Variance of total scores
+    num_items = dataframe.shape[1]  # Number of items
+    
+    # Cronbach's alpha formula
+    cronbach_alpha = (num_items / (num_items - 1)) * (1 - item_variances.sum() / total_score_variance)
+    return cronbach_alpha
+
+# Calculate Cronbach's alpha for the two trust measures
+cronbach_alpha_news = calculate_cronbach_alpha(conf_dat[reverse_columns1])
+cronbach_alpha_device = calculate_cronbach_alpha(conf_dat[device_trust_columns])
+cronbach_alpha_enjoyment = calculate_cronbach_alpha(conf_dat[enjoyment])
+cronbach_alpha_IQ = calculate_cronbach_alpha(conf_dat[IQ])
+
+# Data for the table
+data = [
+    ["Trust in News", f"{cronbach_alpha_news:.3f}"],
+    ["Trust in Devices", f"{cronbach_alpha_device:.3f}"]
+]
+
+# Create the table image
+fig, ax = plt.subplots(figsize=(4, 2))
+ax.axis('tight')
+ax.axis('off')
+
+# Create the table with bold labels
+table = ax.table(
+    cellText=data,
+    colLabels=["Measure", "Cronbach's Alpha"],
+    colColours=["lightblue", "lightblue"],
+    cellLoc='center',
+    loc='center',
+)
+
+# Apply bold formatting to headers and first column
+for (row, col), cell in table.get_celld().items():
+    if row == 0:  # Header row
+        cell.set_text_props(weight='bold')
+    if col == 0:  # First column (labels)
+        cell.set_text_props(weight='bold')
+
+# Save the table as an image
+plt.savefig("cronbach_alpha_table.png", bbox_inches='tight', dpi=300)
+
+# Display the image
+plt.show()
+
 
 #Print a list of column names to get appropriate variables for correlation matrix
 print(list(conf_dat.columns))
@@ -907,10 +909,6 @@ from statsmodels.multivariate.manova import MANOVA
 
 # Rename column
 data_combined.rename(columns={'News Interests_Numeric': 'News_Interests_Numeric'}, inplace=True)
-#manova = MANOVA.from_formula(
-   # 'Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Overall_Device_Trust + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Never_Used_Devices + Novelty_2_nee',
-   # data=data_combined
-#)
 
 manova = MANOVA.from_formula(
     'Overall_Trust_News + Overall_Device_Trust ~ Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Novelty_2_nee',
@@ -918,14 +916,17 @@ manova = MANOVA.from_formula(
 )
 # Run the MANOVA test
 result = manova.mv_test()
-
-# Display the results
 print(result)
 
 
+
+
+
+import pandas as pd
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
+import matplotlib.pyplot as plt
 
 # Define the independent variables (the same for all ANOVAs)
 formula = 'Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Avg_Likeability + Avg_Enjoyment + Avg_TECHtrust + News_Interests_Numeric + Novelty_2_nee'
@@ -933,8 +934,23 @@ formula = 'Communication_Style_transactional * Device_Type_speaker + Avg_IQ + Av
 # List of dependent variables
 dependent_vars = ['Overall_Trust_News', 'Overall_Device_Trust']
 
-# Run separate ANOVAs for each dependent variable
-for dep_var in dependent_vars:
+# Function to format the F, p-values, and df to 3 decimal places
+def format_results(anova_results):
+    formatted_results = []
+    for factor, result in anova_results.iterrows():
+        formatted_results.append({
+            'Variable': factor,
+            'df': f'{result["df"]:.0f}',  # Formatting df as integer
+            'F-value': f'{result["F"]:.3f}',  # Formatting F-value to 3 decimal places
+            'p-value': f'{result["PR(>F)"]:.3f}'  # Formatting p-value to 3 decimal places
+        })
+    return formatted_results
+
+# Create a figure with subplots (2 rows, 1 column)
+fig, axs = plt.subplots(2, 1, figsize=(12, 12))  # Adjust size as needed
+
+# Loop through dependent variables and create a table for each one
+for i, dep_var in enumerate(dependent_vars):
     # Construct the formula for ANOVA
     anova_formula = f'{dep_var} ~ {formula}'
 
@@ -944,11 +960,44 @@ for dep_var in dependent_vars:
     # Run the ANOVA test
     anova_results = anova_lm(model, typ=2)
 
-    # Display the results
-    print(f'ANOVA results for {dep_var}:')
-    print(anova_results)
-    print('\n' + '-'*50 + '\n')
+    # Format the results with df, F-value, and p-value
+    formatted_results = format_results(anova_results)
 
+    # Convert the formatted results into a DataFrame
+    anova_results_df = pd.DataFrame(formatted_results)
+
+    # Create a table for this ANOVA result and add it to the subplot
+    ax = axs[i]  # Choose the appropriate subplot
+    ax.axis('off')  # Turn off the axes
+
+    # Add title to the table for each ANOVA model
+    ax.text(0.5, 0.95, f'ANOVA Results for {dep_var}', ha='center', va='top', fontsize=15, weight='bold')
+
+    # Create the table with the results and increased font size
+    table = ax.table(
+        cellText=anova_results_df.values,
+        colLabels=['Variable', 'df', 'F-value', 'p-value'],
+        cellLoc='center',
+        loc='center',
+        colColours=['lightblue', 'lightgreen', 'lightgreen', 'lightgreen'],
+        colWidths=[0.3, 0.2, 0.25, 0.25]
+    )
+
+    # Apply bold formatting to headers and first column
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:  # Header row
+            cell.set_text_props(weight='bold', fontsize=16)
+        elif col == 0:  # First column (labels)
+            cell.set_text_props(weight='bold', fontsize=14)
+        else:
+            cell.set_fontsize(16)  # Set readable font size for all other cells
+
+    # Adjust the scaling of the table to fill the subplot
+    table.scale(1.4, 1.4)
+
+# Show the combined figure with both tables
+plt.tight_layout()  # Adjust layout for better spacing
+plt.show()
 
 
 # Count occurrences of each unique response in 'News_Frequency'
