@@ -936,15 +936,29 @@ dependent_vars = ['Overall_Trust_News', 'Overall_Device_Trust']
 
 # Function to format the F, p-values, and df to 3 decimal places
 def format_results(anova_results):
+    # Mapping of original variable names to desired display names
+    variable_name_map = {
+        'Communication_Style_transactional': 'Communication Style',
+        'Device_Type_speaker': 'Device Type',
+        'News_Interests_Numeric': 'News Interest',
+        'Novelty_2_nee': 'Never Used Device',
+        'Communication_Style_transactional:Device_Type_speaker': '(Interaction: Device × Communication)'
+    }
+
     formatted_results = []
     for factor, result in anova_results.iterrows():
+        # Rename the variable using the mapping
+        display_name = variable_name_map.get(factor, factor)
+
+        # Add formatted row to results
         formatted_results.append({
-            'Variable': factor,
+            'Variable': display_name,
             'df': f'{result["df"]:.0f}',  # Formatting df as integer
             'F-value': f'{result["F"]:.3f}',  # Formatting F-value to 3 decimal places
             'p-value': f'{result["PR(>F)"]:.3f}'  # Formatting p-value to 3 decimal places
         })
     return formatted_results
+
 
 # Create a figure with subplots (2 rows, 1 column)
 fig, axs = plt.subplots(2, 1, figsize=(12, 12))  # Adjust size as needed
@@ -1019,6 +1033,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def save_table_as_image(dataframe, image_path):
+    # Format dataframe to show only 3 decimal places
+    dataframe = dataframe.copy()
+    for col in ['Coefficient', 'P-value', 'R-squared']:
+        if col in dataframe.columns:
+            dataframe[col] = dataframe[col].apply(lambda x: f'{x:.3f}')
+
     # Create a Matplotlib figure
     fig, ax = plt.subplots(figsize=(10, dataframe.shape[0] * 0.5))  # Adjust height based on number of rows
     ax.axis('tight')
@@ -1033,9 +1053,15 @@ def save_table_as_image(dataframe, image_path):
     table.set_fontsize(10)
     table.auto_set_column_width(col=list(range(len(dataframe.columns))))
 
+    # Bold headers (column titles)
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:  # Column headers
+            cell.set_text_props(weight='bold')
+
     # Save the table as an image
     plt.savefig(image_path, bbox_inches='tight', dpi=300)
     plt.close(fig)
+
 
 def forward_selection_with_image(df_encoded, dependent_vars, independent_vars, p_value_threshold=0.05):
     results = {}
