@@ -234,6 +234,9 @@ print(filtered_data2.head())
 conf_dat = filtered_data2.drop('Standardized_Email', axis=1)
 print(conf_dat.head())
 
+#create a csv file with encrypted data
+conf_dat.to_csv('encrypted_data.csv')
+
 # Loop through all columns and apply str.strip() and str.lower() if the column has string data
 for col in conf_dat:
     if conf_dat[col].dtype == 'object':  # Check if the column is a string/object type
