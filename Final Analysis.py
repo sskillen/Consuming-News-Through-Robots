@@ -161,7 +161,7 @@ filtered_data['check_1'] = filtered_data['check_1'].replace(
     np.nan,
     regex=True
 )
-print(filtered_data.head()) #data still here
+print(filtered_data.head()) 
 
 # Drop rows where 'check_1' is NaN (these are people who never completed the full experiment)
 filtered_data1 = filtered_data.dropna(subset=['check_1'])
@@ -189,7 +189,7 @@ filtered_data1['EndDate_y'] = pd.to_datetime(filtered_data1['EndDate_y'])
 num_emails = len(filtered_data1['Email'])
 print(f"Number of emails: {num_emails}")
 
-# Set cutoff date
+# Set cutoff date (participants before this date were used as practice to improve study design)
 cutoff_date = pd.to_datetime("2024-10-29 00:00:00")
 
 # Filter rows where either EndDate_x or EndDate_y is after the cutoff
@@ -241,10 +241,10 @@ for col in conf_dat:
 
 print(conf_dat.head()) #all data is here at this point
 
-# Step 2: Replace "prefer not to say" with 11 in 'Political Leaning'
+#Replace "prefer not to say" with 11 in 'Political Leaning'
 conf_dat['Political Leaning'] = conf_dat['Political Leaning'].replace("prefer not to say", 11)
 
-# Step 3: Replace "don't know" with 11 in the specified 'Trust in Sources' columns
+# Replace "don't know" with 11 in the specified 'Trust in Sources' columns
 columns_to_update = ['Trust in Sources_1', 'Trust in Sources_2', 'Trust in Sources_3', 'Trust in Sources_4']
 for col in columns_to_update:
     conf_dat[col] = conf_dat[col].replace("don't know", 11)
@@ -252,7 +252,7 @@ for col in columns_to_update:
 print(conf_dat[columns_to_update].head())
 
 
-# Define mapping logic
+# Define mapping logic for conditions (original condition column contained both device & communication style. extraction needed to have two separate columns.)
 def extract_communication_style(condition):
     if 'transactional' in condition:
         return 'transactional'
@@ -329,17 +329,9 @@ for column in correct_answers:
 
 # Count the number of incorrect answers for check_3, ignoring NaN values
 incorrect_counts['check_3'] = (conf_dat['check_3_correct'] == False).sum()
-
-# Print the number of incorrect answers for each column
-for question, count in incorrect_counts.items():
-    # Calculate total participants who answered the question (excluding NaN values)
-    answered_count = conf_dat[f'{question}_correct'].notna().sum()
-    print(f'Incorrect answers for {question}: {count} out of {answered_count} participants ({(count / answered_count) * 100:.2f}%)')
-
 print(conf_dat['Device_Type'])
 
-# Step 1: Define all mappings
-# Step 1: Define all mappings
+# Step 1: Define all mappings for likert scales in surveys
 mappings = {
     'News Habits': {
         "never": 1,
@@ -657,7 +649,7 @@ conf_dat['SUS_Score'] = conf_dat[sus_odd_items + sus_even_items].sum(axis=1) * 2
 # Output the final SUS scores
 print(conf_dat[['SUS_Score']])
 
-#average for each pariticipant on enjoyment can be taken - higher scores = higher enjoyment 
+#average for each pariticipant on enjoyment, likeability, IQ, and antropomorphism of device can be taken - higher scores = higher enjoyment 
 enjoyment = ['Enjoyment_1', 'Enjoyment_2', 'Enjoyment_3', 'Enjoyment_4', 'Enjoyment_5', 'Enjoyment_6']
 likeability = ['Likeability_1', 'Likeability_2', 'Likeability_3', 'Likeability_4', 'Likeability_5']
 IQ = ['PercievedIQ_1', 'PercievedIQ_2', 'PercievedIQ_3', 'PercievedIQ_4', 'PercievedIQ_5']
@@ -876,8 +868,18 @@ short_names = {
     'Gender of Robot_mannelijk': "Male_GenderPerceived",
     'Novelty_1_nee': "Never_Heardof_Devices",
     'Novelty_2_nee': "Never_Used_Devices",
+    'Communication_Style_transactional': 'Communication Style',
+    'Device_Type_speaker': 'Device Type',
+     'News_Interests_Numeric': 'News Interest',
+     'Novelty_2_nee': 'Never Used Device',
+    'Avg_IQ': 'Percieved Device Intelligence',
+    'Avg_Likeability': 'Percieved Device Likeability',
+    'Avg_Enjoyment': 'Handling Device Enjoyment',
+
+        'Communication_Style_transactional:Device_Type_speaker': '(Interaction: Device × Communication)'
+    }
     
-}
+
 
 # Rename columns and rows using short names
 heatmap_data = heatmap_data.rename(columns=short_names, index=short_names)
@@ -942,6 +944,10 @@ def format_results(anova_results):
         'Device_Type_speaker': 'Device Type',
         'News_Interests_Numeric': 'News Interest',
         'Novelty_2_nee': 'Never Used Device',
+        'Avg_IQ': 'Percieved Device Intelligence',
+        'Avg_Likeability': 'Percieved Device Likeability',
+        'Avg_Enjoyment': 'Handling Device Enjoyment',
+
         'Communication_Style_transactional:Device_Type_speaker': '(Interaction: Device × Communication)'
     }
 
@@ -1186,18 +1192,18 @@ def forward_selection(df_encoded, dependent_vars, independent_vars, p_value_thre
 
 
 
-# Third regression to test hypothesis 3
-newsTrust = [ 'Overall_Trust_News']
+
 
 # add overall device trust to independent varibles
-independent_vars2 = ['Overall_Device_Trust', 'News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
+independent_vars2 = ['News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ','Overall_Device_Trust']
+independent_vars3= [ 'News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
+independent_vars4= [ 'News_Interests_Numeric', 'Avg_IQ']
 
 withoutDeviceTrust = ['News_Interests_Numeric', 'Avg_Enjoyment', 'Avg_IQ']
 withoutDeviceTrustandIQ = ['News_Interests_Numeric', 'Avg_Enjoyment']
 
 
 # Call the forward_selection function with your data and lists of dependent and independent variables
-results = forward_selection(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
-results_no_DeviceTrust = forward_selection(data_combined, newsTrust, withoutDeviceTrust, p_value_threshold=0.05)
-results_no_DeviceTrustandIQ = forward_selection(data_combined, newsTrust, withoutDeviceTrustandIQ, p_value_threshold=0.05)
-resultswithImage = forward_selection_with_image(data_combined, newsTrust, independent_vars2, p_value_threshold=0.05)
+results = forward_selection(data_combined, dependent_vars, independent_vars2, p_value_threshold=0.05)
+
+resultswithImage = forward_selection_with_image(data_combined, dependent_vars, independent_vars2, p_value_threshold=0.05)
